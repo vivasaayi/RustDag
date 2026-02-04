@@ -1,0 +1,1522 @@
+{
+  "version": "0.1",
+  "stages": [
+    {
+      "id": "start",
+      "label": "Start",
+      "category": "Control",
+      "icon": "ST",
+      "description": "Entry point",
+      "ports": {
+        "inputs": [],
+        "outputs": [
+          {
+            "id": "out",
+            "label": "Out",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "default": "Start"
+          }
+        }
+      }
+    },
+    {
+      "id": "stop",
+      "label": "Stop",
+      "category": "Control",
+      "icon": "SP",
+      "description": "End of workflow",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "control"
+          }
+        ],
+        "outputs": []
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "string",
+            "default": "success"
+          }
+        }
+      }
+    },
+    {
+      "id": "loop",
+      "label": "Loop",
+      "category": "Control",
+      "icon": "LP",
+      "description": "Iterate while condition is true",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "control"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "next",
+            "label": "Next",
+            "dataType": "control"
+          },
+          {
+            "id": "done",
+            "label": "Done",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "required": [
+          "condition"
+        ],
+        "properties": {
+          "condition": {
+            "type": "string",
+            "description": "Expression"
+          },
+          "maxIterations": {
+            "type": "number",
+            "default": 100
+          }
+        }
+      }
+    },
+    {
+      "id": "parallel_split",
+      "label": "Parallel Split",
+      "category": "Control",
+      "icon": "PS",
+      "description": "Fork into parallel branches",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "control"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "branch_a",
+            "label": "Branch A",
+            "dataType": "control"
+          },
+          {
+            "id": "branch_b",
+            "label": "Branch B",
+            "dataType": "control"
+          },
+          {
+            "id": "branch_c",
+            "label": "Branch C",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "all",
+              "subset"
+            ],
+            "default": "all"
+          }
+        }
+      },
+      "dynamicPorts": {
+        "outputs": true
+      }
+    },
+    {
+      "id": "exclusive_choice",
+      "label": "Exclusive Choice",
+      "category": "Control",
+      "icon": "XC",
+      "description": "Choose exactly one branch",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "control"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "case_a",
+            "label": "Case A",
+            "dataType": "control"
+          },
+          {
+            "id": "case_b",
+            "label": "Case B",
+            "dataType": "control"
+          },
+          {
+            "id": "default",
+            "label": "Default",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "expression": {
+            "type": "string"
+          }
+        }
+      },
+      "dynamicPorts": {
+        "outputs": true
+      }
+    },
+    {
+      "id": "multi_choice",
+      "label": "Multi Choice",
+      "category": "Control",
+      "icon": "MC",
+      "description": "Choose one or more branches",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "control"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "path_a",
+            "label": "Path A",
+            "dataType": "control"
+          },
+          {
+            "id": "path_b",
+            "label": "Path B",
+            "dataType": "control"
+          },
+          {
+            "id": "path_c",
+            "label": "Path C",
+            "dataType": "control"
+          },
+          {
+            "id": "default",
+            "label": "Default",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "rules": {
+            "type": "string",
+            "description": "Multiple boolean rules"
+          }
+        }
+      },
+      "dynamicPorts": {
+        "outputs": true
+      }
+    },
+    {
+      "id": "thread_split",
+      "label": "Thread Split",
+      "category": "Control",
+      "icon": "TS",
+      "description": "Spawn multiple instances",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "control"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "threads",
+            "label": "Threads",
+            "dataType": "control"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number",
+            "default": 1
+          },
+          "itemsExpression": {
+            "type": "string"
+          }
+        }
+      },
+      "dynamicPorts": {
+        "outputs": true
+      }
+    },
+    {
+      "id": "thread_join",
+      "label": "Thread Join",
+      "category": "Control",
+      "icon": "TJ",
+      "description": "Join multiple threads",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "control"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "out",
+            "label": "Out",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "joinType": {
+            "type": "string",
+            "enum": [
+              "all",
+              "any"
+            ],
+            "default": "all"
+          }
+        }
+      },
+      "dynamicPorts": {
+        "inputs": true
+      }
+    },
+    {
+      "id": "simple_merge",
+      "label": "Simple Merge",
+      "category": "Control",
+      "icon": "SM",
+      "description": "Merge alternatives without sync",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "control"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "out",
+            "label": "Out",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "any",
+              "all"
+            ],
+            "default": "any"
+          }
+        }
+      },
+      "dynamicPorts": {
+        "inputs": true
+      }
+    },
+    {
+      "id": "sync_merge",
+      "label": "Synchronization Merge",
+      "category": "Control",
+      "icon": "SJ",
+      "description": "Merge with synchronization",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "control"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "out",
+            "label": "Out",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "all",
+              "any"
+            ],
+            "default": "all"
+          }
+        }
+      },
+      "dynamicPorts": {
+        "inputs": true
+      }
+    },
+    {
+      "id": "pause",
+      "label": "Pause / Wait Approval",
+      "category": "Control",
+      "icon": "PA",
+      "description": "Pause until approval or timeout",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "control"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "approved",
+            "label": "Approved",
+            "dataType": "control"
+          },
+          {
+            "id": "rejected",
+            "label": "Rejected",
+            "dataType": "control"
+          },
+          {
+            "id": "timeout",
+            "label": "Timeout",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "approvers": {
+            "type": "string"
+          },
+          "timeoutMinutes": {
+            "type": "number",
+            "default": 60
+          }
+        }
+      }
+    },
+    {
+      "id": "trigger",
+      "label": "Trigger",
+      "category": "Control",
+      "icon": "TR",
+      "description": "Scheduler, callback, approvals",
+      "ports": {
+        "inputs": [],
+        "outputs": [
+          {
+            "id": "out",
+            "label": "Triggered",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "schedule",
+              "callback",
+              "approval"
+            ]
+          },
+          "cron": {
+            "type": "string"
+          },
+          "callbackUrl": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "id": "call_workflow",
+      "label": "Call Workflow",
+      "category": "Control",
+      "icon": "CW",
+      "description": "Invoke another workflow",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "control"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "success",
+            "label": "Success",
+            "dataType": "control"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "required": [
+          "workflowId"
+        ],
+        "properties": {
+          "workflowId": {
+            "type": "string"
+          },
+          "waitForCompletion": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      }
+    },
+    {
+      "id": "send_mail",
+      "label": "Send Mail",
+      "category": "Tasks",
+      "icon": "ML",
+      "description": "Send email",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "control"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "success",
+            "label": "Success",
+            "dataType": "control"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "required": [
+          "to",
+          "subject"
+        ],
+        "properties": {
+          "to": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "id": "notify_user",
+      "label": "Notify User",
+      "category": "Tasks",
+      "icon": "NT",
+      "description": "Push notification",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "control"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "success",
+            "label": "Success",
+            "dataType": "control"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "id": "string_template",
+      "label": "String Template",
+      "category": "Tasks",
+      "icon": "TM",
+      "description": "Format strings",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "data"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "out",
+            "label": "Out",
+            "dataType": "data"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "template": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "id": "llm_agent",
+      "label": "LLM Agent",
+      "category": "Tasks",
+      "icon": "AI",
+      "description": "Predefined agent",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "data"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "out",
+            "label": "Out",
+            "dataType": "data"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "agentId": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "temperature": {
+            "type": "number",
+            "default": 0.2
+          }
+        }
+      }
+    },
+    {
+      "id": "exec_process",
+      "label": "Execute Process",
+      "category": "Tasks",
+      "icon": "EX",
+      "description": "Run CLI command",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "data"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "stdout",
+            "label": "Stdout",
+            "dataType": "data"
+          },
+          {
+            "id": "stderr",
+            "label": "Stderr",
+            "dataType": "data"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "required": [
+          "command"
+        ],
+        "properties": {
+          "command": {
+            "type": "string"
+          },
+          "args": {
+            "type": "string"
+          },
+          "timeoutSeconds": {
+            "type": "number",
+            "default": 60
+          }
+        }
+      }
+    },
+    {
+      "id": "custom_llm_agent",
+      "label": "Custom LLM Agent",
+      "category": "Tasks",
+      "icon": "CA",
+      "description": "Dynamic prompt",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "data"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "out",
+            "label": "Out",
+            "dataType": "data"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "temperature": {
+            "type": "number",
+            "default": 0.2
+          }
+        }
+      }
+    },
+    {
+      "id": "task_approval",
+      "label": "Task Approval",
+      "category": "Tasks",
+      "icon": "AP",
+      "description": "Wait for approval",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "control"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "approved",
+            "label": "Approved",
+            "dataType": "control"
+          },
+          {
+            "id": "rejected",
+            "label": "Rejected",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "approvers": {
+            "type": "string"
+          },
+          "timeoutMinutes": {
+            "type": "number",
+            "default": 60
+          }
+        }
+      }
+    },
+    {
+      "id": "api_call",
+      "label": "API Call",
+      "category": "Tasks",
+      "icon": "API",
+      "description": "HTTP request",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "data"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "success",
+            "label": "Success",
+            "dataType": "data"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "required": [
+          "method",
+          "url"
+        ],
+        "properties": {
+          "method": {
+            "type": "string",
+            "enum": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
+          },
+          "url": {
+            "type": "string"
+          },
+          "headers": {
+            "type": "string"
+          },
+          "query": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "auth": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "id": "csv_writer",
+      "label": "CSV Writer",
+      "category": "Intermediate",
+      "icon": "CSVW",
+      "description": "Write CSV",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "data"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "success",
+            "label": "Success",
+            "dataType": "control"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "delimiter": {
+            "type": "string",
+            "default": ","
+          }
+        }
+      }
+    },
+    {
+      "id": "csv_reader",
+      "label": "CSV Reader",
+      "category": "Intermediate",
+      "icon": "CSVR",
+      "description": "Read CSV",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "data"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "rows",
+            "label": "Rows",
+            "dataType": "data"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "delimiter": {
+            "type": "string",
+            "default": ","
+          }
+        }
+      }
+    },
+    {
+      "id": "image_writer",
+      "label": "Image Writer",
+      "category": "Intermediate",
+      "icon": "IMGW",
+      "description": "Write image",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "data"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "success",
+            "label": "Success",
+            "dataType": "control"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "png",
+              "jpg",
+              "webp"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "image_reader",
+      "label": "Image Reader",
+      "category": "Intermediate",
+      "icon": "IMGR",
+      "description": "Read image",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "data"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "image",
+            "label": "Image",
+            "dataType": "data"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "id": "word_doc",
+      "label": "Word Document",
+      "category": "Intermediate",
+      "icon": "DOCX",
+      "description": "Generate DOCX",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "data"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "document",
+            "label": "Document",
+            "dataType": "data"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "templatePath": {
+            "type": "string"
+          },
+          "outputPath": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "id": "pdf_generator",
+      "label": "PDF Generator",
+      "category": "Intermediate",
+      "icon": "PDF",
+      "description": "Generate PDF",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "data"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "pdf",
+            "label": "PDF",
+            "dataType": "data"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "templatePath": {
+            "type": "string"
+          },
+          "outputPath": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "id": "mysql_query",
+      "label": "MySQL Query",
+      "category": "Advanced",
+      "icon": "MY",
+      "description": "Execute MySQL query",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "data"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "rows",
+            "label": "Rows",
+            "dataType": "data"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "connection": {
+            "type": "string"
+          },
+          "query": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "id": "postgres_query",
+      "label": "Postgres Query",
+      "category": "Advanced",
+      "icon": "PG",
+      "description": "Execute Postgres query",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "data"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "rows",
+            "label": "Rows",
+            "dataType": "data"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "connection": {
+            "type": "string"
+          },
+          "query": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "id": "mongo_query",
+      "label": "MongoDB Query",
+      "category": "Advanced",
+      "icon": "MG",
+      "description": "Execute Mongo query",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "data"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "docs",
+            "label": "Docs",
+            "dataType": "data"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "connection": {
+            "type": "string"
+          },
+          "collection": {
+            "type": "string"
+          },
+          "operation": {
+            "type": "string"
+          },
+          "filter": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "id": "aws_kinesis",
+      "label": "AWS Kinesis",
+      "category": "Advanced",
+      "icon": "KN",
+      "description": "Kinesis stream",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "data"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "success",
+            "label": "Success",
+            "dataType": "control"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "region": {
+            "type": "string"
+          },
+          "stream": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "put",
+              "get"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "aws_sqs",
+      "label": "AWS SQS",
+      "category": "Advanced",
+      "icon": "SQS",
+      "description": "Queue operations",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "data"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "success",
+            "label": "Success",
+            "dataType": "control"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "region": {
+            "type": "string"
+          },
+          "queueUrl": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "send",
+              "receive",
+              "delete"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "aws_s3",
+      "label": "AWS S3",
+      "category": "Advanced",
+      "icon": "S3",
+      "description": "S3 operations",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "data"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "success",
+            "label": "Success",
+            "dataType": "control"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "region": {
+            "type": "string"
+          },
+          "bucket": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "put",
+              "get",
+              "delete",
+              "list"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "kubernetes",
+      "label": "Kubernetes",
+      "category": "Advanced",
+      "icon": "K8S",
+      "description": "K8s operations",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "data"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "success",
+            "label": "Success",
+            "dataType": "control"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "namespace": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "operation": {
+            "type": "string",
+            "enum": [
+              "get",
+              "apply",
+              "delete",
+              "scale"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "cloudwatch",
+      "label": "CloudWatch",
+      "category": "Advanced",
+      "icon": "CW",
+      "description": "CloudWatch metrics/logs",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "data"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "success",
+            "label": "Success",
+            "dataType": "control"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "region": {
+            "type": "string"
+          },
+          "logGroup": {
+            "type": "string"
+          },
+          "query": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "id": "inline_script",
+      "label": "Inline Script",
+      "category": "Advanced",
+      "icon": "SC",
+      "description": "Execute script",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "data"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "out",
+            "label": "Out",
+            "dataType": "data"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": "string",
+            "enum": [
+              "groovy",
+              "js",
+              "python"
+            ]
+          },
+          "code": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -5,9 +5,11 @@ use std::net::SocketAddr;
 mod dag;
 mod runner;
 mod models;
+mod workflow;
 
 use dag::{Dag, DagExecutionResult};
 use models::ModelInfo;
+use workflow::{Workflow, WorkflowExecutionResult};
 
 #[tokio::main]
 async fn main() {
@@ -18,7 +20,8 @@ async fn main() {
         .route("/execute-graph", post(execute_graph))
         .route("/models/list", get(list_models))
         .route("/models/download", post(download_model))
-        .route("/chat", post(chat));
+        .route("/chat", post(chat))
+        .route("/execute-workflow", post(execute_workflow));
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 9091));
     println!("llm-dag http shim listening on {addr}");
@@ -44,6 +47,21 @@ async fn execute_graph(Json(payload): Json<ExecuteGraphRequest>) -> Json<Execute
     let dag = Dag::from_json(&payload.graph).unwrap_or_else(|_| Dag::empty());
     let result = dag.execute().await;
     Json(ExecuteGraphResponse { result })
+}
+
+#[derive(Debug, Deserialize)]
+struct ExecuteWorkflowRequest {
+    workflow: Workflow,
+}
+
+#[derive(Debug, Serialize)]
+struct ExecuteWorkflowResponse {
+    result: WorkflowExecutionResult,
+}
+
+async fn execute_workflow(Json(payload): Json<ExecuteWorkflowRequest>) -> Json<ExecuteWorkflowResponse> {
+    let result = payload.workflow.execute().await;
+    Json(ExecuteWorkflowResponse { result })
 }
 
 async fn list_models() -> Json<Vec<ModelInfo>> {

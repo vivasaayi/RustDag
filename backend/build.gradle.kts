@@ -26,5 +26,11 @@ application {
     mainClass.set("app.Main")
 }
 
+jar {
+    manifest {
+        attributes("Main-Class" to "app.Main")
+    }
+}
+
 
 // Packaging example: jlink & jpackage steps (configure below for your OS)
