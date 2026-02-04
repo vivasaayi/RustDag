@@ -1,0 +1,25 @@
+[package]
+name = "llm-dag"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = { version = "0.6", features = ["json"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1", features = ["full"] }
+thiserror = "1.0"
+log = "0.4"
+env_logger = "0.10"
+reqwest = { version = "0.11", features = ["json", "stream"] }
+tokio-util = "0.7"
+dirs = "5.0"
+rand = "0.8"
+
+[features]
+default = []
+llama = ["llama-cpp-2"]
+
+[dependencies.llama-cpp-2]
+version = "0.1.126"
+optional = true

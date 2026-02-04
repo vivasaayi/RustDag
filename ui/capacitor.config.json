@@ -1,0 +1,6 @@
+{
+  "appId": "com.example.desktopai",
+  "appName": "Desktop AI Builder",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}

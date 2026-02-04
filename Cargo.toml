@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "llm-dag",
+    "src-tauri",
+    "ui/src-tauri"
+]
