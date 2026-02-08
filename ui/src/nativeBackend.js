@@ -36,4 +36,96 @@ export async function chat(messages) {
   return res.json();
 }
 
-export default { healthcheck, executeGraph, chat };
+export async function executeWorkflow(workflow) {
+  if (isCapacitor && window.Capacitor.Plugins.NativeBackend) {
+    return window.Capacitor.Plugins.NativeBackend.executeWorkflow({ workflow });
+  }
+  const res = await fetch('http://localhost:9091/execute-workflow', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ workflow }),
+  });
+  return res.json();
+}
+
+export async function resumeWorkflow(instanceId, payload) {
+  if (isCapacitor && window.Capacitor.Plugins.NativeBackend) {
+    return window.Capacitor.Plugins.NativeBackend.resumeWorkflow({ instanceId, payload });
+  }
+  const res = await fetch(`http://localhost:9091/workflow/${instanceId}/resume`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  return res.json();
+}
+
+export async function listSecrets() {
+  const res = await fetch('http://localhost:9091/secrets/list');
+  return res.json();
+}
+
+export async function setSecret(name, value) {
+  const res = await fetch('http://localhost:9091/secrets/set', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, value }),
+  });
+  return res.json();
+}
+
+export async function deleteSecret(name) {
+  const res = await fetch('http://localhost:9091/secrets/delete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
+  return res.json();
+}
+
+export async function listTemplates() {
+  const res = await fetch('http://localhost:9091/templates/list');
+  return res.json();
+}
+
+export async function syncTemplates(templates) {
+  const res = await fetch('http://localhost:9091/templates/sync', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ templates }),
+  });
+  return res.json();
+}
+
+export async function updateTemplateConfig(payload) {
+  const res = await fetch('http://localhost:9091/templates/config', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  return res.json();
+}
+
+export async function runTemplate(id) {
+  const res = await fetch('http://localhost:9091/templates/run', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id }),
+  });
+  return res.json();
+}
+
+export default {
+  healthcheck,
+  executeGraph,
+  chat,
+  executeWorkflow,
+  resumeWorkflow,
+  listSecrets,
+  setSecret,
+  deleteSecret,
+  listTemplates,
+  syncTemplates,
+  updateTemplateConfig,
+  runTemplate,
+};

@@ -1,0 +1,271 @@
+{
+  "version": "0.1",
+  "templates": [
+    {
+      "id": "daily_morning_briefing",
+      "name": "Daily Morning Briefing",
+      "category": "Everyday",
+      "description": "Weather + day summary sent as a single notification.",
+      "profiles": ["everyday", "devices", "robots", "advanced"],
+      "riskLevel": "low",
+      "defaultDevice": "local",
+      "workflow": {
+        "nodes": [
+          {
+            "id": "t1",
+            "stageId": "trigger",
+            "label": "Morning Trigger",
+            "position": { "x": 60, "y": 80 },
+            "properties": { "type": "schedule", "cron": "0 8 * * *", "timezone": "UTC" }
+          },
+          {
+            "id": "t2",
+            "stageId": "weather_check",
+            "label": "Weather",
+            "position": { "x": 320, "y": 80 },
+            "properties": { "location": "Home", "units": "metric" }
+          },
+          {
+            "id": "t3",
+            "stageId": "llm_agent",
+            "label": "Summarize Day",
+            "position": { "x": 560, "y": 80 },
+            "properties": { "prompt": "Summarize weather and give a friendly plan for the day." }
+          },
+          {
+            "id": "t4",
+            "stageId": "notify_user",
+            "label": "Notify",
+            "position": { "x": 810, "y": 80 },
+            "properties": { "message": "Morning briefing ready." }
+          },
+          {
+            "id": "t5",
+            "stageId": "stop",
+            "label": "Done",
+            "position": { "x": 1030, "y": 80 },
+            "properties": {}
+          }
+        ],
+        "edges": [
+          { "id": "e1", "source": "t1", "target": "t2", "sourceHandle": "out", "targetHandle": "in" },
+          { "id": "e2", "source": "t2", "target": "t3", "sourceHandle": "ok", "targetHandle": "in" },
+          { "id": "e3", "source": "t3", "target": "t4", "sourceHandle": "out", "targetHandle": "in" },
+          { "id": "e4", "source": "t4", "target": "t5", "sourceHandle": "success", "targetHandle": "in" }
+        ]
+      }
+    },
+    {
+      "id": "school_homework_planner",
+      "name": "School Homework Planner",
+      "category": "Everyday",
+      "description": "Collect homework tasks and produce a simple plan.",
+      "profiles": ["everyday", "devices", "robots", "advanced"],
+      "riskLevel": "low",
+      "defaultDevice": "local",
+      "workflow": {
+        "nodes": [
+          {
+            "id": "h1",
+            "stageId": "start",
+            "label": "Start",
+            "position": { "x": 70, "y": 100 },
+            "properties": {}
+          },
+          {
+            "id": "h2",
+            "stageId": "ask_user",
+            "label": "Collect Tasks",
+            "position": { "x": 310, "y": 100 },
+            "properties": { "question": "What homework tasks do you have today?", "timeoutMinutes": 30 }
+          },
+          {
+            "id": "h3",
+            "stageId": "llm_agent",
+            "label": "Build Plan",
+            "position": { "x": 560, "y": 100 },
+            "properties": { "prompt": "Create a 60-minute study plan with breaks." }
+          },
+          {
+            "id": "h4",
+            "stageId": "notify_user",
+            "label": "Send Plan",
+            "position": { "x": 810, "y": 100 },
+            "properties": { "message": "Your homework plan is ready." }
+          }
+        ],
+        "edges": [
+          { "id": "he1", "source": "h1", "target": "h2", "sourceHandle": "out", "targetHandle": "in" },
+          { "id": "he2", "source": "h2", "target": "h3", "sourceHandle": "submitted", "targetHandle": "in" },
+          { "id": "he3", "source": "h3", "target": "h4", "sourceHandle": "out", "targetHandle": "in" }
+        ]
+      }
+    },
+    {
+      "id": "medication_reminder_approval",
+      "name": "Medication Reminder + Confirmation",
+      "category": "Everyday",
+      "description": "Send reminders and require confirmation for completion.",
+      "profiles": ["everyday", "devices", "robots", "advanced"],
+      "riskLevel": "low",
+      "defaultDevice": "local",
+      "workflow": {
+        "nodes": [
+          { "id": "m1", "stageId": "trigger", "label": "Medication Trigger", "position": { "x": 80, "y": 120 }, "properties": { "type": "schedule", "cron": "0 9 * * *" } },
+          { "id": "m2", "stageId": "reminder", "label": "Reminder", "position": { "x": 320, "y": 120 }, "properties": { "title": "Medication time", "message": "Please take your medicine.", "at": "now" } },
+          { "id": "m3", "stageId": "task_approval", "label": "Confirm Done", "position": { "x": 560, "y": 120 }, "properties": { "timeoutMinutes": 120 } },
+          { "id": "m4", "stageId": "notify_user", "label": "Escalate", "position": { "x": 810, "y": 210 }, "properties": { "message": "Medication not confirmed." } },
+          { "id": "m5", "stageId": "stop", "label": "Stop", "position": { "x": 1020, "y": 120 }, "properties": {} }
+        ],
+        "edges": [
+          { "id": "me1", "source": "m1", "target": "m2", "sourceHandle": "out", "targetHandle": "in" },
+          { "id": "me2", "source": "m2", "target": "m3", "sourceHandle": "success", "targetHandle": "in" },
+          { "id": "me3", "source": "m3", "target": "m5", "sourceHandle": "approved", "targetHandle": "in" },
+          { "id": "me4", "source": "m3", "target": "m4", "sourceHandle": "rejected", "targetHandle": "in" },
+          { "id": "me5", "source": "m4", "target": "m5", "sourceHandle": "success", "targetHandle": "in" }
+        ]
+      }
+    },
+    {
+      "id": "door_camera_triage",
+      "name": "Door Camera Triage",
+      "category": "Home Devices",
+      "description": "Classify door camera events and notify appropriately.",
+      "profiles": ["devices", "robots", "advanced"],
+      "riskLevel": "medium",
+      "defaultDevice": "home_hub",
+      "workflow": {
+        "nodes": [
+          { "id": "d1", "stageId": "camera_event", "label": "Door Camera", "position": { "x": 90, "y": 110 }, "properties": { "timeoutSeconds": 90 } },
+          { "id": "d2", "stageId": "notify_user", "label": "Notify Person", "position": { "x": 360, "y": 40 }, "properties": { "message": "Person detected at the door." } },
+          { "id": "d3", "stageId": "notify_user", "label": "Notify Package", "position": { "x": 360, "y": 120 }, "properties": { "message": "Package detected at the door." } },
+          { "id": "d4", "stageId": "stop", "label": "Ignore", "position": { "x": 360, "y": 200 }, "properties": {} }
+        ],
+        "edges": [
+          { "id": "de1", "source": "d1", "target": "d2", "sourceHandle": "person", "targetHandle": "in" },
+          { "id": "de2", "source": "d1", "target": "d3", "sourceHandle": "package", "targetHandle": "in" },
+          { "id": "de3", "source": "d1", "target": "d4", "sourceHandle": "none", "targetHandle": "in" }
+        ]
+      }
+    },
+    {
+      "id": "evening_energy_saver",
+      "name": "Evening Energy Saver",
+      "category": "Home Devices",
+      "description": "Activate low-power evening scene and notify household.",
+      "profiles": ["devices", "robots", "advanced"],
+      "riskLevel": "medium",
+      "defaultDevice": "home_hub",
+      "workflow": {
+        "nodes": [
+          { "id": "es1", "stageId": "trigger", "label": "Evening Trigger", "position": { "x": 80, "y": 90 }, "properties": { "type": "schedule", "cron": "0 21 * * *" } },
+          { "id": "es2", "stageId": "scene_activate", "label": "Night Eco Scene", "position": { "x": 330, "y": 90 }, "properties": { "sceneId": "night_eco" } },
+          { "id": "es3", "stageId": "notify_user", "label": "Notify", "position": { "x": 580, "y": 90 }, "properties": { "message": "Home switched to night energy mode." } }
+        ],
+        "edges": [
+          { "id": "ese1", "source": "es1", "target": "es2", "sourceHandle": "out", "targetHandle": "in" },
+          { "id": "ese2", "source": "es2", "target": "es3", "sourceHandle": "success", "targetHandle": "in" }
+        ]
+      }
+    },
+    {
+      "id": "robot_item_delivery_safe",
+      "name": "Robot Item Delivery (Safe)",
+      "category": "Robots",
+      "description": "Safety checks before a robot delivery command.",
+      "profiles": ["robots", "advanced"],
+      "riskLevel": "high",
+      "defaultDevice": "robot_unit",
+      "workflow": {
+        "nodes": [
+          { "id": "r1", "stageId": "start", "label": "Start", "position": { "x": 70, "y": 130 }, "properties": {} },
+          { "id": "r2", "stageId": "safety_guard", "label": "Safety Policy", "position": { "x": 270, "y": 130 }, "properties": { "policy": "no_delivery_in_quiet_hours" } },
+          { "id": "r3", "stageId": "human_presence_check", "label": "Presence Check", "position": { "x": 480, "y": 130 }, "properties": { "zone": "hallway" } },
+          { "id": "r4", "stageId": "robot_command", "label": "Deliver Item", "position": { "x": 700, "y": 130 }, "properties": { "robotId": "homebot-1", "command": "pickup", "payload": "water bottle" } },
+          { "id": "r5", "stageId": "notify_user", "label": "Blocked Notice", "position": { "x": 700, "y": 230 }, "properties": { "message": "Robot delivery blocked by safety checks." } },
+          { "id": "r6", "stageId": "stop", "label": "Stop", "position": { "x": 930, "y": 130 }, "properties": {} }
+        ],
+        "edges": [
+          { "id": "re1", "source": "r1", "target": "r2", "sourceHandle": "out", "targetHandle": "in" },
+          { "id": "re2", "source": "r2", "target": "r3", "sourceHandle": "allowed", "targetHandle": "in" },
+          { "id": "re3", "source": "r2", "target": "r5", "sourceHandle": "blocked", "targetHandle": "in" },
+          { "id": "re4", "source": "r3", "target": "r4", "sourceHandle": "clear", "targetHandle": "in" },
+          { "id": "re5", "source": "r3", "target": "r5", "sourceHandle": "detected", "targetHandle": "in" },
+          { "id": "re6", "source": "r4", "target": "r6", "sourceHandle": "success", "targetHandle": "in" },
+          { "id": "re7", "source": "r5", "target": "r6", "sourceHandle": "success", "targetHandle": "in" }
+        ]
+      }
+    },
+    {
+      "id": "robot_battery_protection",
+      "name": "Robot Battery Protection",
+      "category": "Robots",
+      "description": "Route robot actions by battery state.",
+      "profiles": ["robots", "advanced"],
+      "riskLevel": "high",
+      "defaultDevice": "robot_unit",
+      "workflow": {
+        "nodes": [
+          { "id": "b1", "stageId": "trigger", "label": "Periodic Trigger", "position": { "x": 60, "y": 120 }, "properties": { "type": "schedule", "cron": "*/15 * * * *" } },
+          { "id": "b2", "stageId": "battery_guard", "label": "Battery Guard", "position": { "x": 300, "y": 120 }, "properties": { "lowThreshold": 30, "criticalThreshold": 10 } },
+          { "id": "b3", "stageId": "robot_command", "label": "Dock Robot", "position": { "x": 550, "y": 180 }, "properties": { "robotId": "homebot-1", "command": "dock" } },
+          { "id": "b4", "stageId": "notify_user", "label": "Notify Low Battery", "position": { "x": 550, "y": 60 }, "properties": { "message": "Robot battery low." } },
+          { "id": "b5", "stageId": "stop", "label": "Stop", "position": { "x": 780, "y": 120 }, "properties": {} }
+        ],
+        "edges": [
+          { "id": "be1", "source": "b1", "target": "b2", "sourceHandle": "out", "targetHandle": "in" },
+          { "id": "be2", "source": "b2", "target": "b5", "sourceHandle": "ok", "targetHandle": "in" },
+          { "id": "be3", "source": "b2", "target": "b4", "sourceHandle": "low", "targetHandle": "in" },
+          { "id": "be4", "source": "b2", "target": "b3", "sourceHandle": "critical", "targetHandle": "in" },
+          { "id": "be5", "source": "b4", "target": "b5", "sourceHandle": "success", "targetHandle": "in" },
+          { "id": "be6", "source": "b3", "target": "b5", "sourceHandle": "success", "targetHandle": "in" }
+        ]
+      }
+    },
+    {
+      "id": "night_safety_sweep",
+      "name": "Night Safety Sweep",
+      "category": "Home Devices",
+      "description": "At night check camera events and alert when needed.",
+      "profiles": ["devices", "robots", "advanced"],
+      "riskLevel": "medium",
+      "defaultDevice": "home_hub",
+      "workflow": {
+        "nodes": [
+          { "id": "n1", "stageId": "trigger", "label": "Night Trigger", "position": { "x": 70, "y": 120 }, "properties": { "type": "schedule", "cron": "0 23 * * *" } },
+          { "id": "n2", "stageId": "camera_event", "label": "Check Camera", "position": { "x": 300, "y": 120 }, "properties": { "timeoutSeconds": 120 } },
+          { "id": "n3", "stageId": "notify_user", "label": "Alert", "position": { "x": 540, "y": 70 }, "properties": { "message": "Night activity detected." } },
+          { "id": "n4", "stageId": "stop", "label": "No Activity", "position": { "x": 540, "y": 180 }, "properties": {} }
+        ],
+        "edges": [
+          { "id": "ne1", "source": "n1", "target": "n2", "sourceHandle": "out", "targetHandle": "in" },
+          { "id": "ne2", "source": "n2", "target": "n3", "sourceHandle": "person", "targetHandle": "in" },
+          { "id": "ne3", "source": "n2", "target": "n3", "sourceHandle": "package", "targetHandle": "in" },
+          { "id": "ne4", "source": "n2", "target": "n4", "sourceHandle": "none", "targetHandle": "in" }
+        ]
+      }
+    },
+    {
+      "id": "manual_override_robot_action",
+      "name": "Manual Override for Robot Action",
+      "category": "Robots",
+      "description": "Require owner confirmation before risky robot actions.",
+      "profiles": ["robots", "advanced"],
+      "riskLevel": "high",
+      "defaultDevice": "robot_unit",
+      "workflow": {
+        "nodes": [
+          { "id": "o1", "stageId": "start", "label": "Start", "position": { "x": 90, "y": 130 }, "properties": {} },
+          { "id": "o2", "stageId": "manual_override", "label": "Owner Confirm", "position": { "x": 330, "y": 130 }, "properties": { "requiredRole": "owner", "reason": "allow robot to move heavy object" } },
+          { "id": "o3", "stageId": "robot_command", "label": "Execute", "position": { "x": 590, "y": 90 }, "properties": { "robotId": "homebot-1", "command": "pickup", "payload": "heavy box" } },
+          { "id": "o4", "stageId": "emergency_stop", "label": "Cancel / Stop", "position": { "x": 590, "y": 200 }, "properties": { "reason": "manual cancel" } }
+        ],
+        "edges": [
+          { "id": "oe1", "source": "o1", "target": "o2", "sourceHandle": "out", "targetHandle": "in" },
+          { "id": "oe2", "source": "o2", "target": "o3", "sourceHandle": "continue", "targetHandle": "in" },
+          { "id": "oe3", "source": "o2", "target": "o4", "sourceHandle": "cancel", "targetHandle": "in" }
+        ]
+      }
+    }
+  ]
+}

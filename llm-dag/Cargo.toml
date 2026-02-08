@@ -15,11 +15,62 @@ reqwest = { version = "0.11", features = ["json", "stream"] }
 tokio-util = "0.7"
 dirs = "5.0"
 rand = "0.8"
+uuid = { version = "1.7", features = ["v4", "serde"] }
+shell-words = "1.1"
+futures = "0.3"
+aes-gcm = "0.10"
+base64 = "0.22"
+chrono = "0.4"
 
 [features]
 default = []
 llama = ["llama-cpp-2"]
+email = ["lettre"]
+db = ["sqlx", "mongodb"]
+aws = ["aws-config", "aws-sdk-s3", "aws-sdk-sqs", "aws-sdk-kinesis", "aws-sdk-cloudwatch"]
+k8s = ["kube"]
 
 [dependencies.llama-cpp-2]
 version = "0.1.126"
 optional = true
+
+[dependencies.lettre]
+version = "0.11"
+optional = true
+default-features = false
+features = ["tokio1", "smtp-transport", "builder"]
+
+[dependencies.sqlx]
+version = "0.7"
+optional = true
+default-features = false
+features = ["runtime-tokio", "macros", "any", "mysql", "postgres"]
+
+[dependencies.mongodb]
+version = "2.8"
+optional = true
+
+[dependencies.aws-config]
+version = "1.1"
+optional = true
+
+[dependencies.aws-sdk-s3]
+version = "1.16"
+optional = true
+
+[dependencies.aws-sdk-sqs]
+version = "1.16"
+optional = true
+
+[dependencies.aws-sdk-kinesis]
+version = "1.16"
+optional = true
+
+[dependencies.aws-sdk-cloudwatch]
+version = "1.16"
+optional = true
+
+[dependencies.kube]
+version = "0.88"
+optional = true
+features = ["runtime", "derive"]

@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useRef, useState } from 'react';
+import React, { useMemo, useCallback, useRef, useState, useEffect } from 'react';
 import ReactFlow, {
   Background,
   Controls,
@@ -9,8 +9,20 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import stageLibraryData from './stages/stageLibrary.json';
+import templateLibraryData from './templates/workflowTemplates.json';
 import StageNode from './components/StageNode.jsx';
 import Inspector from './components/Inspector.jsx';
+import {
+  deleteSecret,
+  executeWorkflow,
+  listSecrets,
+  listTemplates,
+  runTemplate as runTemplateById,
+  resumeWorkflow,
+  syncTemplates,
+  setSecret,
+  updateTemplateConfig as saveTemplateConfig,
+} from './nativeBackend.js';
 
 const nodeTypes = { stage: StageNode };
 
@@ -27,6 +39,13 @@ function buildDefaults(stage) {
     }
   });
   return defaults;
+}
+
+function mergeProperties(stage, props) {
+  return {
+    ...buildDefaults(stage),
+    ...(props || {}),
+  };
 }
 
 function clonePorts(stage) {
@@ -69,7 +88,7 @@ function buildNodeFromStage(stage, position) {
       stageId: stage.id,
       stage,
       label: stage.label,
-      properties: buildDefaults(stage),
+      properties: mergeProperties(stage, null),
       ports: clonePorts(stage),
     },
   };
@@ -89,8 +108,189 @@ function findPort(stage, portGroup, handleId, portsOverride) {
   return ports[portGroup].find((p) => p.id === handleId) || null;
 }
 
+function materializeWorkflow(workflow, stageById) {
+  const nextNodes = (workflow?.nodes || []).map((node) => {
+    const stage = stageById[node.stageId] || {
+      id: node.stageId,
+      label: node.label || 'Unknown Stage',
+      ports: { inputs: [], outputs: [] },
+      propertiesSchema: { type: 'object', properties: {} },
+      riskLevel: 'high',
+    };
+
+    return {
+      id: node.id,
+      type: 'stage',
+      position: node.position || { x: 0, y: 0 },
+      data: {
+        stageId: node.stageId,
+        stage,
+        label: node.label || stage.label,
+        properties: mergeProperties(stage, node.properties),
+        ports: node.ports || clonePorts(stage),
+      },
+    };
+  });
+
+  const nextEdges = (workflow?.edges || []).map((edge) => ({
+    id: edge.id,
+    source: edge.source,
+    target: edge.target,
+    sourceHandle: edge.sourceHandle,
+    targetHandle: edge.targetHandle,
+    type: 'smoothstep',
+  }));
+
+  return { nodes: nextNodes, edges: nextEdges };
+}
+
+function collectSecretRefs(value, refs) {
+  if (typeof value === 'string') {
+    if (value.startsWith('secret://')) {
+      refs.add(value.slice('secret://'.length));
+    }
+    return;
+  }
+  if (Array.isArray(value)) {
+    value.forEach((item) => collectSecretRefs(item, refs));
+    return;
+  }
+  if (value && typeof value === 'object') {
+    Object.values(value).forEach((item) => collectSecretRefs(item, refs));
+  }
+}
+
+function parseCapabilityList(value) {
+  if (!value || typeof value !== 'string') return [];
+  return value
+    .split(',')
+    .map((x) => x.trim())
+    .filter(Boolean);
+}
+
+function validateWorkflowGraph(workflow, stageById, secretSet) {
+  const issues = [];
+  const hasSafetyGuard = (workflow.nodes || []).some((node) => node.stageId === 'safety_guard');
+  const hasEmergencyStop = (workflow.nodes || []).some((node) => node.stageId === 'emergency_stop');
+
+  if (!(workflow.nodes || []).some((node) => node.stageId === 'start' || node.stageId === 'trigger')) {
+    issues.push({ severity: 'warning', message: 'Workflow has no start or trigger stage.', nodeId: null });
+  }
+
+  (workflow.nodes || []).forEach((node) => {
+    const stage = stageById[node.stageId];
+    if (!stage) {
+      issues.push({
+        severity: 'error',
+        message: `Unknown stage: ${node.stageId}`,
+        nodeId: node.id,
+      });
+      return;
+    }
+
+    const properties = node.properties || {};
+    const required = stage?.propertiesSchema?.required || [];
+
+    required.forEach((key) => {
+      const val = properties[key];
+      const missing = val === null || val === undefined || (typeof val === 'string' && val.trim() === '');
+      if (missing) {
+        issues.push({
+          severity: 'error',
+          message: `Missing required property '${key}' for ${stage.label}.`,
+          nodeId: node.id,
+          field: key,
+        });
+      }
+    });
+
+    const refs = new Set();
+    collectSecretRefs(properties, refs);
+    refs.forEach((name) => {
+      if (!secretSet.has(name)) {
+        issues.push({
+          severity: 'error',
+          message: `Secret '${name}' not found for ${stage.label}.`,
+          nodeId: node.id,
+        });
+      }
+    });
+
+    if (stage.riskLevel === 'high') {
+      if (!hasSafetyGuard) {
+        issues.push({
+          severity: 'error',
+          message: 'High-risk stages require at least one Safety Guard stage.',
+          nodeId: node.id,
+        });
+      }
+      if (!hasEmergencyStop) {
+        issues.push({
+          severity: 'warning',
+          message: 'High-risk stages should include an Emergency Stop stage.',
+          nodeId: node.id,
+        });
+      }
+    }
+
+    const requiredCaps = Array.isArray(stage.requiredCapabilities) ? stage.requiredCapabilities : [];
+    if (requiredCaps.length > 0) {
+      const configuredCaps = parseCapabilityList(properties.requiredCapabilities);
+      const missingCaps = requiredCaps.filter((cap) => !configuredCaps.includes(cap));
+      if (missingCaps.length > 0) {
+        issues.push({
+          severity: 'warning',
+          message: `Recommended capabilities missing: ${missingCaps.join(', ')}.`,
+          nodeId: node.id,
+        });
+      }
+    }
+  });
+
+  return issues;
+}
+
+function defaultTemplateConfig(template) {
+  return {
+    enabled: true,
+    autoRun: false,
+    schedule: template?.recommendedSchedule || 'manual',
+    device: template?.defaultDevice || 'local',
+    lastRunAt: 0,
+    lastStatus: '',
+    lastError: '',
+    lastInstanceId: '',
+  };
+}
+
+function mergeTemplateConfigsFromBackend(records, templates) {
+  const byId = {};
+  (records || []).forEach((record) => {
+    byId[record.id] = record;
+  });
+
+  const merged = {};
+  (templates || []).forEach((template) => {
+    const record = byId[template.id];
+    merged[template.id] = {
+      ...defaultTemplateConfig(template),
+      enabled: record?.enabled ?? true,
+      autoRun: record?.autoRun ?? false,
+      schedule: record?.schedule || template?.recommendedSchedule || 'manual',
+      device: record?.device || template?.defaultDevice || 'local',
+      lastRunAt: record?.lastRunAt || 0,
+      lastStatus: record?.lastStatus || '',
+      lastError: record?.lastError || '',
+      lastInstanceId: record?.lastInstanceId || '',
+    };
+  });
+
+  return merged;
+}
+
 export default function App() {
   const stageLibrary = stageLibraryData.stages || [];
+  const templateLibrary = templateLibraryData.templates || [];
   const stageById = useMemo(() => mapStageById(stageLibrary), [stageLibrary]);
 
   const initialNodes = useMemo(() => {
@@ -107,7 +307,31 @@ export default function App() {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [search, setSearch] = useState('');
+  const [profileMode, setProfileMode] = useState('everyday');
+  const [runLoading, setRunLoading] = useState(false);
+  const [runStatus, setRunStatus] = useState('idle');
+  const [runEvents, setRunEvents] = useState([]);
+  const [pendingItems, setPendingItems] = useState([]);
+  const [instanceId, setInstanceId] = useState('');
+  const [runError, setRunError] = useState('');
+  const [decisionByNode, setDecisionByNode] = useState({});
+  const [validationIssues, setValidationIssues] = useState([]);
+  const [showSecrets, setShowSecrets] = useState(false);
+  const [secretNames, setSecretNames] = useState([]);
+  const [secretNameInput, setSecretNameInput] = useState('');
+  const [secretValueInput, setSecretValueInput] = useState('');
+  const [secretsError, setSecretsError] = useState('');
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [templateConfigs, setTemplateConfigs] = useState(() => mergeTemplateConfigsFromBackend([], templateLibrary));
+  const [autoRunMessage, setAutoRunMessage] = useState('');
   const fileInputRef = useRef(null);
+
+  const visibleProfiles = useMemo(() => {
+    if (profileMode === 'everyday') return new Set(['everyday']);
+    if (profileMode === 'devices') return new Set(['everyday', 'devices']);
+    if (profileMode === 'robots') return new Set(['everyday', 'devices', 'robots']);
+    return new Set(['everyday', 'devices', 'robots', 'advanced']);
+  }, [profileMode]);
 
   const handleSelectionChange = useCallback(({ nodes: selected }) => {
     setSelectedNodeId(selected?.[0]?.id || null);
@@ -135,18 +359,8 @@ export default function App() {
       const sourceNode = nodes.find((node) => node.id === connection.source);
       const targetNode = nodes.find((node) => node.id === connection.target);
       if (!sourceNode || !targetNode) return false;
-      const sourcePort = findPort(
-        sourceNode.data.stage,
-        'outputs',
-        connection.sourceHandle,
-        sourceNode.data.ports
-      );
-      const targetPort = findPort(
-        targetNode.data.stage,
-        'inputs',
-        connection.targetHandle,
-        targetNode.data.ports
-      );
+      const sourcePort = findPort(sourceNode.data.stage, 'outputs', connection.sourceHandle, sourceNode.data.ports);
+      const targetPort = findPort(targetNode.data.stage, 'inputs', connection.targetHandle, targetNode.data.ports);
       if (!sourcePort || !targetPort) return false;
       if (sourcePort.dataType && targetPort.dataType && sourcePort.dataType !== targetPort.dataType) return false;
       return true;
@@ -198,12 +412,8 @@ export default function App() {
       );
       setEdges((eds) =>
         eds.filter((edge) => {
-          if (kind === 'inputs' && edge.target === selectedNodeId && edge.targetHandle === portId) {
-            return false;
-          }
-          if (kind === 'outputs' && edge.source === selectedNodeId && edge.sourceHandle === portId) {
-            return false;
-          }
+          if (kind === 'inputs' && edge.target === selectedNodeId && edge.targetHandle === portId) return false;
+          if (kind === 'outputs' && edge.source === selectedNodeId && edge.sourceHandle === portId) return false;
           return true;
         })
       );
@@ -222,6 +432,18 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
 
+  const loadWorkflowToCanvas = useCallback((workflow) => {
+    const materialized = materializeWorkflow(workflow, stageById);
+    setNodes(materialized.nodes);
+    setEdges(materialized.edges);
+    setRunStatus('idle');
+    setRunEvents([]);
+    setPendingItems([]);
+    setInstanceId('');
+    setRunError('');
+    setValidationIssues([]);
+  }, [stageById, setNodes, setEdges]);
+
   const handleImport = (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -229,47 +451,168 @@ export default function App() {
     reader.onload = () => {
       try {
         const parsed = JSON.parse(reader.result);
-        const nextNodes = (parsed.nodes || []).map((node) => {
-          const stage = stageById[node.stageId] || { label: node.label || 'Unknown', ports: { inputs: [], outputs: [] } };
-          return {
-            id: node.id,
-            type: 'stage',
-            position: node.position || { x: 0, y: 0 },
-            data: {
-              stageId: node.stageId,
-              stage,
-              label: node.label || stage.label,
-              properties: node.properties || buildDefaults(stage),
-              ports: node.ports || clonePorts(stage),
-            },
-          };
-        });
-        const nextEdges = (parsed.edges || []).map((edge) => ({
-          id: edge.id,
-          source: edge.source,
-          target: edge.target,
-          sourceHandle: edge.sourceHandle,
-          targetHandle: edge.targetHandle,
-          type: 'smoothstep',
-        }));
-        setNodes(nextNodes);
-        setEdges(nextEdges);
+        loadWorkflowToCanvas(parsed);
       } catch (err) {
-        console.error('Invalid workflow JSON', err);
+        setRunError('Invalid workflow JSON file.');
       }
     };
     reader.readAsText(file);
   };
 
+  const refreshSecrets = useCallback(async () => {
+    setSecretsError('');
+    try {
+      const response = await listSecrets();
+      setSecretNames(response?.secrets || []);
+      return response?.secrets || [];
+    } catch (error) {
+      setSecretsError(error?.message || 'Failed to load secrets');
+      return [];
+    }
+  }, []);
+
+  const refreshTemplateConfigs = useCallback(async () => {
+    try {
+      const response = await listTemplates();
+      setTemplateConfigs(mergeTemplateConfigsFromBackend(response?.templates || [], templateLibrary));
+    } catch (error) {
+      setRunError(error?.message || 'Failed to load templates');
+    }
+  }, [templateLibrary]);
+
+  const syncTemplateLibrary = useCallback(async () => {
+    try {
+      await syncTemplates(templateLibrary);
+      await refreshTemplateConfigs();
+    } catch (error) {
+      setRunError(error?.message || 'Failed to sync templates');
+    }
+  }, [templateLibrary, refreshTemplateConfigs]);
+
+  useEffect(() => {
+    syncTemplateLibrary();
+  }, [syncTemplateLibrary]);
+
+  const validateCurrentWorkflow = useCallback(async (workflow) => {
+    const secretList = await refreshSecrets();
+    const issues = validateWorkflowGraph(workflow, stageById, new Set(secretList));
+    setValidationIssues(issues);
+    return issues;
+  }, [refreshSecrets, stageById]);
+
+  const runWorkflowGraph = useCallback(async (workflow, runSource = 'manual') => {
+    setRunLoading(true);
+    setRunError('');
+    try {
+      const issues = await validateCurrentWorkflow(workflow);
+      const blockingErrors = issues.filter((item) => item.severity === 'error');
+      if (blockingErrors.length > 0) {
+        setRunStatus('validation_failed');
+        setRunError(`Run blocked by ${blockingErrors.length} validation error(s).`);
+        return { executed: false };
+      }
+
+      const response = await executeWorkflow(workflow);
+      const result = response?.result || {};
+      setInstanceId(result.instance_id || '');
+      setRunStatus(result.status || 'unknown');
+      setRunEvents(result.events || []);
+      setPendingItems(result.pending || []);
+      setAutoRunMessage(runSource.startsWith('scheduled:') ? `Scheduled run completed: ${runSource.replace('scheduled:', '')}` : '');
+      return { executed: true, result };
+    } catch (error) {
+      setRunError(error?.message || 'Run failed');
+      return { executed: false };
+    } finally {
+      setRunLoading(false);
+    }
+  }, [validateCurrentWorkflow]);
+
+  const runWorkflow = useCallback(async () => {
+    const workflow = serializeGraph(nodes, edges);
+    await runWorkflowGraph(workflow, 'canvas');
+  }, [nodes, edges, runWorkflowGraph]);
+
+  const runValidateOnly = useCallback(async () => {
+    const workflow = serializeGraph(nodes, edges);
+    setRunError('');
+    await validateCurrentWorkflow(workflow);
+  }, [nodes, edges, validateCurrentWorkflow]);
+
+  const resumePending = useCallback(
+    async (item) => {
+      if (!instanceId) return;
+      setRunLoading(true);
+      setRunError('');
+      try {
+        const response = await resumeWorkflow(instanceId, {
+          node_id: item.node_id,
+          decision: decisionByNode[item.node_id] || 'approved',
+          payload: null,
+        });
+        const result = response?.result || {};
+        setRunStatus(result.status || 'unknown');
+        setRunEvents((prev) => [...prev, ...(result.events || [])]);
+        setPendingItems(result.pending || []);
+      } catch (error) {
+        setRunError(error?.message || 'Resume failed');
+      } finally {
+        setRunLoading(false);
+      }
+    },
+    [instanceId, decisionByNode]
+  );
+
+  const saveSecret = useCallback(async () => {
+    if (!secretNameInput.trim() || !secretValueInput) return;
+    setSecretsError('');
+    try {
+      await setSecret(secretNameInput.trim(), secretValueInput);
+      setSecretNameInput('');
+      setSecretValueInput('');
+      await refreshSecrets();
+    } catch (error) {
+      setSecretsError(error?.message || 'Failed to save secret');
+    }
+  }, [secretNameInput, secretValueInput, refreshSecrets]);
+
+  const removeSecret = useCallback(
+    async (name) => {
+      setSecretsError('');
+      try {
+        await deleteSecret(name);
+        await refreshSecrets();
+      } catch (error) {
+        setSecretsError(error?.message || 'Failed to delete secret');
+      }
+    },
+    [refreshSecrets]
+  );
+
+  const openSecrets = useCallback(async () => {
+    setShowSecrets(true);
+    await refreshSecrets();
+  }, [refreshSecrets]);
+
+  const openTemplates = useCallback(async () => {
+    setShowTemplates(true);
+    await refreshTemplateConfigs();
+  }, [refreshTemplateConfigs]);
+
   const filteredStages = useMemo(() => {
-    if (!search.trim()) return stageLibrary;
+    const byProfile = stageLibrary.filter((stage) => {
+      const profiles = stage.profiles || ['advanced'];
+      return profiles.some((profile) => visibleProfiles.has(profile));
+    });
+
+    if (!search.trim()) return byProfile;
     const term = search.toLowerCase();
-    return stageLibrary.filter((stage) =>
+    return byProfile.filter((stage) =>
       [stage.label, stage.id, stage.description, stage.category].some((text) =>
         String(text || '').toLowerCase().includes(term)
       )
     );
-  }, [search, stageLibrary]);
+  }, [search, stageLibrary, visibleProfiles]);
 
   const groupedStages = useMemo(() => {
     return filteredStages.reduce((acc, stage) => {
@@ -279,6 +622,89 @@ export default function App() {
       return acc;
     }, {});
   }, [filteredStages]);
+
+  const visibleTemplates = useMemo(() => {
+    return templateLibrary.filter((template) => {
+      const profiles = template.profiles || ['advanced'];
+      return profiles.some((profile) => visibleProfiles.has(profile));
+    });
+  }, [templateLibrary, visibleProfiles]);
+
+  const groupedTemplates = useMemo(() => {
+    return visibleTemplates.reduce((acc, template) => {
+      const category = template.category || 'Other';
+      if (!acc[category]) acc[category] = [];
+      acc[category].push(template);
+      return acc;
+    }, {});
+  }, [visibleTemplates]);
+
+  const updateTemplateConfig = useCallback(async (templateId, patch) => {
+    setTemplateConfigs((prev) => {
+      const current = prev[templateId] || defaultTemplateConfig(templateLibrary.find((item) => item.id === templateId));
+      return {
+        ...prev,
+        [templateId]: {
+          ...current,
+          ...patch,
+        },
+      };
+    });
+
+    try {
+      const response = await saveTemplateConfig({
+        id: templateId,
+        enabled: patch.enabled,
+        autoRun: patch.autoRun,
+        schedule: patch.schedule,
+        device: patch.device,
+      });
+      if (response?.error) {
+        setRunError(response.error);
+      }
+      await refreshTemplateConfigs();
+    } catch (error) {
+      setRunError(error?.message || 'Failed to update template config');
+      await refreshTemplateConfigs();
+    }
+  }, [templateLibrary, refreshTemplateConfigs]);
+
+  const loadTemplate = useCallback((template) => {
+    loadWorkflowToCanvas(template.workflow);
+  }, [loadWorkflowToCanvas]);
+
+  const runTemplateNow = useCallback(async (template, source = 'template') => {
+    setRunLoading(true);
+    setRunError('');
+    try {
+      const response = await runTemplateById(template.id);
+      if (response?.error) {
+        setRunStatus('failed');
+        setRunError(response.error);
+        return { executed: false };
+      }
+
+      const result = response?.result || {};
+      setInstanceId(result.instance_id || '');
+      setRunStatus(result.status || 'unknown');
+      setRunEvents(result.events || []);
+      setPendingItems(result.pending || []);
+      setAutoRunMessage(source === 'template' ? '' : `Scheduled run completed: ${template.name}`);
+      await refreshTemplateConfigs();
+      return { executed: true, result };
+    } catch (error) {
+      setRunError(error?.message || 'Template run failed');
+      return { executed: false };
+    } finally {
+      setRunLoading(false);
+    }
+  }, [refreshTemplateConfigs]);
+
+  const validationSummary = useMemo(() => {
+    const errors = validationIssues.filter((item) => item.severity === 'error').length;
+    const warnings = validationIssues.filter((item) => item.severity === 'warning').length;
+    return { errors, warnings };
+  }, [validationIssues]);
 
   return (
     <div className="app-shell">
@@ -291,9 +717,21 @@ export default function App() {
           </div>
         </div>
         <div className="header-actions">
+          <select
+            className="input mode-select"
+            value={profileMode}
+            onChange={(event) => setProfileMode(event.target.value)}
+          >
+            <option value="everyday">Everyday</option>
+            <option value="devices">Home Devices</option>
+            <option value="robots">Robots + Devices</option>
+            <option value="advanced">Advanced Builder</option>
+          </select>
+          <button className="btn ghost" onClick={openTemplates}>Templates</button>
+          <button className="btn ghost" onClick={openSecrets}>Secrets</button>
           <button className="btn ghost" onClick={() => fileInputRef.current?.click()}>Import</button>
           <button className="btn ghost" onClick={handleExport}>Save</button>
-          <button className="btn primary">Run</button>
+          <button className="btn primary" onClick={runWorkflow} disabled={runLoading}>Run</button>
         </div>
         <input
           ref={fileInputRef}
@@ -328,6 +766,9 @@ export default function App() {
                     <div>
                       <div className="stage-title">{stage.label}</div>
                       <div className="stage-subtitle">{stage.description}</div>
+                      <div className={`risk-pill risk-${stage.riskLevel || 'medium'}`}>
+                        risk: {stage.riskLevel || 'medium'}
+                      </div>
                     </div>
                   </button>
                 ))}
@@ -338,6 +779,7 @@ export default function App() {
 
         <main className="panel canvas">
           <div className="canvas-toolbar">
+            <button className="btn ghost" onClick={runValidateOnly}>Validate</button>
             <button className="btn ghost">Auto-Layout</button>
             <button className="btn ghost">Align</button>
             <button className="btn ghost">Zoom 100%</button>
@@ -380,20 +822,179 @@ export default function App() {
         <div className="run-header">
           <div>
             <div className="run-title">Run Panel</div>
-            <div className="run-subtitle">staging - last run 12:41 PM</div>
+            <div className="run-subtitle">status: {runStatus}{instanceId ? ` | instance: ${instanceId}` : ''}</div>
           </div>
           <div className="run-actions">
-            <button className="btn ghost">Validate</button>
-            <button className="btn primary">Run</button>
+            <button className="btn ghost" onClick={runValidateOnly}>Validate</button>
+            <button className="btn primary" onClick={runWorkflow} disabled={runLoading}>Run</button>
           </div>
         </div>
+
+        {autoRunMessage && <div className="run-log ok">{autoRunMessage}</div>}
+        {runError && <div className="run-log error">{runError}</div>}
+
+        <div className="pending-panel">
+          <div className="panel-title">Validation</div>
+          <div className="run-subtitle">errors: {validationSummary.errors} | warnings: {validationSummary.warnings}</div>
+          {validationIssues.length === 0 && <div className="run-log ok">No validation issues.</div>}
+          {validationIssues.map((issue, idx) => (
+            <div key={`v-${idx}`} className={`run-log ${issue.severity === 'error' ? 'error' : 'warn'}`}>
+              [{issue.severity}] {issue.message}{issue.nodeId ? ` (node: ${issue.nodeId})` : ''}
+            </div>
+          ))}
+        </div>
+
         <div className="run-body">
-          <div className="run-log ok">Start -> ok (124 ms)</div>
-          <div className="run-log ok">LLM -> ok (2.1 s)</div>
-          <div className="run-log warn">Transform -> warning: field \"priority\" missing</div>
-          <div className="run-log">Mailer -> queued</div>
+          {runEvents.length === 0 && <div className="run-log">No run events yet.</div>}
+          {runEvents.map((event, idx) => (
+            <div key={`${event.node_id}-${idx}`} className={`run-log ${event.status === 'ok' || event.status === 'resumed' ? 'ok' : ''}`}>
+              {event.stage_id} ({event.node_id}) {'->'} {event.status}{event.detail ? `: ${event.detail}` : ''}
+            </div>
+          ))}
+        </div>
+
+        <div className="pending-panel">
+          <div className="panel-title">Approvals and Triggers Inbox</div>
+          {pendingItems.length === 0 && <div className="run-log">No pending approvals or triggers.</div>}
+          {pendingItems.map((item) => (
+            <div key={item.node_id} className="pending-item">
+              <div className="pending-meta">
+                <strong>{item.stage_id}</strong> ({item.node_id})
+                <span className="pending-action">action: {item.action}</span>
+              </div>
+              {(item.action === 'approval' || item.action === 'pause') && (
+                <select
+                  className="input small"
+                  value={decisionByNode[item.node_id] || 'approved'}
+                  onChange={(event) =>
+                    setDecisionByNode((prev) => ({ ...prev, [item.node_id]: event.target.value }))
+                  }
+                >
+                  <option value="approved">approved</option>
+                  <option value="rejected">rejected</option>
+                  <option value="timeout">timeout</option>
+                </select>
+              )}
+              <button className="btn ghost" onClick={() => resumePending(item)} disabled={runLoading || !instanceId}>
+                Resume
+              </button>
+            </div>
+          ))}
         </div>
       </section>
+
+      {showTemplates && (
+        <div className="modal-backdrop" onClick={() => setShowTemplates(false)}>
+          <div className="modal-card" onClick={(event) => event.stopPropagation()}>
+            <div className="panel-title">Workflow Templates</div>
+            <div className="run-log">Enable, schedule, assign device, then run or load templates.</div>
+
+            {Object.entries(groupedTemplates).map(([category, templates]) => (
+              <div key={category} className="template-group">
+                <div className="section-label">{category}</div>
+                {templates.map((template) => {
+                  const config = templateConfigs[template.id] || defaultTemplateConfig(template);
+                  return (
+                    <div key={template.id} className="template-item">
+                      <div className="template-main">
+                        <div className="stage-title">{template.name}</div>
+                        <div className="stage-subtitle">{template.description}</div>
+                        <div className={`risk-pill risk-${template.riskLevel || 'medium'}`}>risk: {template.riskLevel || 'medium'}</div>
+                        <div className="stage-subtitle">
+                          last run: {config.lastRunAt ? new Date(config.lastRunAt).toLocaleString() : 'never'} | status: {config.lastStatus || 'idle'}
+                        </div>
+                        {config.lastError && (
+                          <div className="run-log warn">{config.lastError}</div>
+                        )}
+                      </div>
+                      <label className="checkbox compact">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(config.enabled)}
+                          onChange={(event) => updateTemplateConfig(template.id, { enabled: event.target.checked })}
+                        />
+                        <span>Enabled</span>
+                      </label>
+                      <label className="checkbox compact">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(config.autoRun)}
+                          onChange={(event) => updateTemplateConfig(template.id, { autoRun: event.target.checked })}
+                        />
+                        <span>Auto-run</span>
+                      </label>
+                      <select
+                        className="input small"
+                        value={config.schedule || 'manual'}
+                        onChange={(event) => updateTemplateConfig(template.id, { schedule: event.target.value })}
+                      >
+                        <option value="manual">manual</option>
+                        <option value="every_15m">every 15m</option>
+                        <option value="hourly">hourly</option>
+                        <option value="daily_9am">daily 09:00</option>
+                      </select>
+                      <select
+                        className="input small"
+                        value={config.device || 'local'}
+                        onChange={(event) => updateTemplateConfig(template.id, { device: event.target.value })}
+                      >
+                        <option value="local">local</option>
+                        <option value="home_hub">home hub</option>
+                        <option value="robot_unit">robot unit</option>
+                        <option value="cloud_runner">cloud runner</option>
+                      </select>
+                      <button className="btn ghost" onClick={() => loadTemplate(template)}>Load</button>
+                      <button className="btn primary" onClick={() => runTemplateNow(template, 'template')} disabled={runLoading}>Run Now</button>
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+
+            <div className="run-actions">
+              <button className="btn ghost" onClick={() => setShowTemplates(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSecrets && (
+        <div className="modal-backdrop" onClick={() => setShowSecrets(false)}>
+          <div className="modal-card" onClick={(event) => event.stopPropagation()}>
+            <div className="panel-title">Secrets Manager</div>
+            <div className="run-log">Use values in stage properties as <code>secret://name</code>.</div>
+            {secretsError && <div className="run-log warn">{secretsError}</div>}
+            <div className="secret-form">
+              <input
+                className="input"
+                placeholder="name"
+                value={secretNameInput}
+                onChange={(event) => setSecretNameInput(event.target.value)}
+              />
+              <input
+                className="input"
+                placeholder="value"
+                value={secretValueInput}
+                onChange={(event) => setSecretValueInput(event.target.value)}
+              />
+              <button className="btn primary" onClick={saveSecret}>Save Secret</button>
+            </div>
+            <div className="secret-list">
+              {secretNames.length === 0 && <div className="run-log">No secrets saved.</div>}
+              {secretNames.map((name) => (
+                <div key={name} className="pending-item">
+                  <span>{name}</span>
+                  <button className="btn ghost" onClick={() => removeSecret(name)}>Delete</button>
+                </div>
+              ))}
+            </div>
+            <div className="run-actions">
+              <button className="btn ghost" onClick={refreshSecrets}>Refresh</button>
+              <button className="btn ghost" onClick={() => setShowSecrets(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

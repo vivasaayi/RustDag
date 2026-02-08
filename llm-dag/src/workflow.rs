@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::{HashMap, HashSet, VecDeque};
 
+use crate::executors;
+use crate::expr;
 use crate::runner;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -52,10 +54,39 @@ pub struct Workflow {
     pub edges: Vec<Edge>,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct InputBuffer {
+    pub node_id: String,
+    pub port_id: String,
+    pub queue: Vec<Value>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PendingAction {
+    pub node_id: String,
+    pub stage_id: String,
+    pub action: String,
+    pub detail: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct WorkflowInstanceState {
+    pub id: String,
+    pub workflow: Workflow,
+    pub outputs: HashMap<String, Value>,
+    pub input_buffers: Vec<InputBuffer>,
+    pub completed_nodes: Vec<String>,
+    pub loop_counts: HashMap<String, usize>,
+    pub pending: Vec<PendingAction>,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WorkflowExecutionResult {
+    pub instance_id: String,
+    pub status: String,
     pub outputs: HashMap<String, Value>,
     pub events: Vec<ExecutionEvent>,
+    pub pending: Vec<PendingAction>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -64,6 +95,13 @@ pub struct ExecutionEvent {
     pub stage_id: String,
     pub status: String,
     pub detail: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ResumeAction {
+    pub node_id: String,
+    pub decision: Option<String>,
+    pub payload: Option<Value>,
 }
 
 #[derive(Debug, Clone)]
@@ -80,97 +118,235 @@ enum JoinMode {
 }
 
 impl Workflow {
-    pub async fn execute(&self) -> WorkflowExecutionResult {
-        let mut outputs: HashMap<String, Value> = HashMap::new();
-        let mut events: Vec<ExecutionEvent> = vec![];
-
-        let node_map: HashMap<String, StageNode> = self
-            .nodes
-            .iter()
-            .cloned()
-            .map(|node| (node.id.clone(), node))
-            .collect();
-
-        let mut outgoing: HashMap<String, Vec<Edge>> = HashMap::new();
-        for edge in &self.edges {
-            outgoing.entry(edge.source.clone()).or_default().push(edge.clone());
+    pub fn new_instance(&self) -> WorkflowInstanceState {
+        WorkflowInstanceState {
+            id: uuid::Uuid::new_v4().to_string(),
+            workflow: self.clone(),
+            outputs: HashMap::new(),
+            input_buffers: vec![],
+            completed_nodes: vec![],
+            loop_counts: HashMap::new(),
+            pending: vec![],
         }
+    }
+}
 
-        let mut input_buffers: HashMap<(String, String), Vec<Value>> = HashMap::new();
-        let mut scheduled: HashSet<String> = HashSet::new();
-        let mut queue: VecDeque<String> = VecDeque::new();
-        let mut loop_counts: HashMap<String, usize> = HashMap::new();
+impl WorkflowInstanceState {
+    pub async fn run(&mut self) -> WorkflowExecutionResult {
+        run_instance(self, None).await
+    }
 
-        for node in &self.nodes {
+    pub async fn resume(&mut self, action: ResumeAction) -> WorkflowExecutionResult {
+        run_instance(self, Some(action)).await
+    }
+}
+
+async fn run_instance(state: &mut WorkflowInstanceState, resume: Option<ResumeAction>) -> WorkflowExecutionResult {
+    let mut events = vec![];
+    let workflow = state.workflow.clone();
+
+    let node_map: HashMap<String, StageNode> = workflow
+        .nodes
+        .iter()
+        .cloned()
+        .map(|node| (node.id.clone(), node))
+        .collect();
+
+    let mut outgoing: HashMap<String, Vec<Edge>> = HashMap::new();
+    for edge in &workflow.edges {
+        outgoing.entry(edge.source.clone()).or_default().push(edge.clone());
+    }
+
+    let mut input_buffers = buffer_vec_to_map(&state.input_buffers);
+    let mut pending_nodes: HashSet<String> = state.pending.iter().map(|p| p.node_id.clone()).collect();
+    let mut completed_nodes: HashSet<String> = state.completed_nodes.iter().cloned().collect();
+
+    let mut queue = VecDeque::new();
+    let mut scheduled = HashSet::new();
+
+    if let Some(action) = resume.clone() {
+        if let Some(node) = node_map.get(&action.node_id) {
             let ports = node.ports.clone().unwrap_or_default();
-            if ports.inputs.is_empty() || node.stage_id == "start" || node.stage_id == "trigger" {
-                queue.push_back(node.id.clone());
-                scheduled.insert(node.id.clone());
-            }
-        }
-
-        while let Some(node_id) = queue.pop_front() {
-            scheduled.remove(&node_id);
-            let Some(node) = node_map.get(&node_id) else { continue };
-            let ports = node.ports.clone().unwrap_or_default();
-
             let join_mode = join_mode(node);
-            if !ports.inputs.is_empty() && !is_ready(node, &ports, &input_buffers, join_mode) {
-                continue;
-            }
-
             let inputs = take_inputs(node, &ports, &mut input_buffers, join_mode);
-
-            let result = execute_stage(node, &inputs, &mut loop_counts).await;
-            outputs.insert(node.id.clone(), result.clone());
+            let override_result = resume_override(node, action);
+            let result = execute_stage(node, &inputs, &mut state.loop_counts, Some(override_result)).await;
+            state.outputs.insert(node.id.clone(), result.clone());
             events.push(ExecutionEvent {
                 node_id: node.id.clone(),
                 stage_id: node.stage_id.clone(),
-                status: "ok".to_string(),
+                status: "resumed".to_string(),
                 detail: None,
             });
 
-            let output_payloads = stage_outputs(node, &ports, &result);
-            if let Some(edges) = outgoing.get(&node_id) {
-                for edge in edges {
-                    let out_port_id = edge
-                        .source_handle
-                        .clone()
-                        .unwrap_or_else(|| ports.outputs.get(0).map(|p| p.id.clone()).unwrap_or_default());
-                    if let Some(payload) = output_payloads.get(&out_port_id) {
-                        let target_port = edge.target_handle.clone().unwrap_or_else(|| {
-                            node_map
-                                .get(&edge.target)
-                                .and_then(|target| target.ports.clone())
-                                .and_then(|p| p.inputs.get(0).map(|port| port.id.clone()))
-                                .unwrap_or_else(|| "in".to_string())
-                        });
-                        let token = Token {
-                            target_node: edge.target.clone(),
-                            target_port: target_port.clone(),
-                            payload: payload.clone(),
-                        };
-                        input_buffers
-                            .entry((token.target_node.clone(), token.target_port.clone()))
-                            .or_default()
-                            .push(token.payload);
+            pending_nodes.remove(&node.id);
+            state.pending.retain(|p| p.node_id != node.id);
 
-                        let target_id = edge.target.clone();
-                        if let Some(target) = node_map.get(&target_id) {
-                            let target_ports = target.ports.clone().unwrap_or_default();
-                            let mode = join_mode(target);
-                            if is_ready(target, &target_ports, &input_buffers, mode) && !scheduled.contains(&target_id) {
-                                scheduled.insert(target_id.clone());
-                                queue.push_back(target_id);
-                            }
-                        }
-                    }
-                }
+            if ports.inputs.is_empty() {
+                completed_nodes.insert(node.id.clone());
+            }
+
+            let output_payloads = stage_outputs(node, &ports, &result);
+            for token in build_tokens(&workflow, node, &output_payloads) {
+                input_buffers
+                    .entry((token.target_node.clone(), token.target_port.clone()))
+                    .or_default()
+                    .push(token.payload);
+                enqueue_if_ready(
+                    &node_map,
+                    &mut queue,
+                    &mut scheduled,
+                    &pending_nodes,
+                    &completed_nodes,
+                    &input_buffers,
+                    &token.target_node,
+                );
             }
         }
-
-        WorkflowExecutionResult { outputs, events }
     }
+
+    for node in &workflow.nodes {
+        if pending_nodes.contains(&node.id) {
+            continue;
+        }
+        let ports = node.ports.clone().unwrap_or_default();
+        if ports.inputs.is_empty() {
+            if completed_nodes.contains(&node.id) {
+                continue;
+            }
+            queue.push_back(node.id.clone());
+            scheduled.insert(node.id.clone());
+        } else if is_ready(node, &ports, &input_buffers, join_mode(node)) {
+            queue.push_back(node.id.clone());
+            scheduled.insert(node.id.clone());
+        }
+    }
+
+    while let Some(node_id) = queue.pop_front() {
+        scheduled.remove(&node_id);
+        let Some(node) = node_map.get(&node_id) else { continue };
+        if pending_nodes.contains(&node_id) {
+            continue;
+        }
+
+        let ports = node.ports.clone().unwrap_or_default();
+        let join_mode = join_mode(node);
+
+        if ports.inputs.is_empty() {
+            if completed_nodes.contains(&node_id) {
+                continue;
+            }
+        } else if !is_ready(node, &ports, &input_buffers, join_mode) {
+            continue;
+        }
+
+        if is_blocking(node) {
+            let action = PendingAction {
+                node_id: node.id.clone(),
+                stage_id: node.stage_id.clone(),
+                action: blocking_action(node),
+                detail: None,
+            };
+            pending_nodes.insert(node.id.clone());
+            state.pending.push(action.clone());
+            events.push(ExecutionEvent {
+                node_id: node.id.clone(),
+                stage_id: node.stage_id.clone(),
+                status: "waiting".to_string(),
+                detail: None,
+            });
+            continue;
+        }
+
+        let inputs = take_inputs(node, &ports, &mut input_buffers, join_mode);
+        let result = execute_stage(node, &inputs, &mut state.loop_counts, None).await;
+        state.outputs.insert(node.id.clone(), result.clone());
+        events.push(ExecutionEvent {
+            node_id: node.id.clone(),
+            stage_id: node.stage_id.clone(),
+            status: "ok".to_string(),
+            detail: None,
+        });
+
+        if ports.inputs.is_empty() {
+            completed_nodes.insert(node.id.clone());
+        }
+
+        let output_payloads = stage_outputs(node, &ports, &result);
+        for token in build_tokens(&workflow, node, &output_payloads) {
+            input_buffers
+                .entry((token.target_node.clone(), token.target_port.clone()))
+                .or_default()
+                .push(token.payload);
+            enqueue_if_ready(
+                &node_map,
+                &mut queue,
+                &mut scheduled,
+                &pending_nodes,
+                &completed_nodes,
+                &input_buffers,
+                &token.target_node,
+            );
+        }
+    }
+
+    state.input_buffers = buffer_map_to_vec(&input_buffers);
+    state.completed_nodes = completed_nodes.into_iter().collect();
+
+    let status = if state.pending.is_empty() { "completed" } else { "waiting" };
+
+    WorkflowExecutionResult {
+        instance_id: state.id.clone(),
+        status: status.to_string(),
+        outputs: state.outputs.clone(),
+        events,
+        pending: state.pending.clone(),
+    }
+}
+
+fn enqueue_if_ready(
+    node_map: &HashMap<String, StageNode>,
+    queue: &mut VecDeque<String>,
+    scheduled: &mut HashSet<String>,
+    pending: &HashSet<String>,
+    completed: &HashSet<String>,
+    buffers: &HashMap<(String, String), Vec<Value>>,
+    node_id: &str,
+) {
+    if scheduled.contains(node_id) || pending.contains(node_id) {
+        return;
+    }
+    let Some(node) = node_map.get(node_id) else { return };
+    let ports = node.ports.clone().unwrap_or_default();
+    if ports.inputs.is_empty() {
+        if completed.contains(node_id) {
+            return;
+        }
+        queue.push_back(node_id.to_string());
+        scheduled.insert(node_id.to_string());
+    } else if is_ready(node, &ports, buffers, join_mode(node)) {
+        queue.push_back(node_id.to_string());
+        scheduled.insert(node_id.to_string());
+    }
+}
+
+fn buffer_vec_to_map(buffers: &[InputBuffer]) -> HashMap<(String, String), Vec<Value>> {
+    let mut map = HashMap::new();
+    for buf in buffers {
+        map.insert((buf.node_id.clone(), buf.port_id.clone()), buf.queue.clone());
+    }
+    map
+}
+
+fn buffer_map_to_vec(buffers: &HashMap<(String, String), Vec<Value>>) -> Vec<InputBuffer> {
+    buffers
+        .iter()
+        .map(|((node_id, port_id), queue)| InputBuffer {
+            node_id: node_id.clone(),
+            port_id: port_id.clone(),
+            queue: queue.clone(),
+        })
+        .collect()
 }
 
 fn join_mode(node: &StageNode) -> JoinMode {
@@ -259,28 +435,78 @@ fn take_inputs(
     inputs
 }
 
+fn is_blocking(node: &StageNode) -> bool {
+    matches!(node.stage_id.as_str(), "pause" | "task_approval" | "trigger")
+}
+
+fn blocking_action(node: &StageNode) -> String {
+    match node.stage_id.as_str() {
+        "pause" => "pause".to_string(),
+        "task_approval" => "approval".to_string(),
+        "trigger" => "trigger".to_string(),
+        _ => "pause".to_string(),
+    }
+}
+
+fn resume_override(node: &StageNode, action: ResumeAction) -> Value {
+    match node.stage_id.as_str() {
+        "pause" | "task_approval" => {
+            let decision = action.decision.unwrap_or_else(|| "approved".to_string());
+            serde_json::json!({"decision": decision, "payload": action.payload})
+        }
+        "trigger" => serde_json::json!({"status": "triggered", "payload": action.payload}),
+        _ => action.payload.unwrap_or(Value::Null),
+    }
+}
+
 async fn execute_stage(
     node: &StageNode,
     inputs: &HashMap<String, Value>,
     loop_counts: &mut HashMap<String, usize>,
+    override_result: Option<Value>,
 ) -> Value {
+    if let Some(result) = override_result {
+        return result;
+    }
+
     let stage = node.stage_id.as_str();
     let props = node.properties.clone().unwrap_or(Value::Null);
 
     match stage {
-        "start" | "trigger" => serde_json::json!({"status": "triggered"}),
+        "start" => serde_json::json!({"status": "started"}),
         "stop" => serde_json::json!({"status": "stopped"}),
         "parallel_split" | "thread_split" => serde_json::json!({"status": "split"}),
         "exclusive_choice" => {
-            let selection = props
-                .get("expression")
-                .and_then(|v| v.as_str())
-                .unwrap_or("default");
+            let route_ids: Vec<String> = node
+                .ports
+                .clone()
+                .unwrap_or_default()
+                .outputs
+                .iter()
+                .map(|p| p.id.clone())
+                .collect();
+            let selection = expr::evaluate_exclusive(
+                props.get("expression").and_then(|v| v.as_str()),
+                &route_ids,
+                inputs,
+            );
             serde_json::json!({"route": selection})
         }
         "multi_choice" => {
-            let rules = props.get("rules");
-            serde_json::json!({"routes": rules.unwrap_or(&Value::Null)})
+            let route_ids: Vec<String> = node
+                .ports
+                .clone()
+                .unwrap_or_default()
+                .outputs
+                .iter()
+                .map(|p| p.id.clone())
+                .collect();
+            let routes = expr::evaluate_multi(
+                props.get("rules").and_then(|v| v.as_str()),
+                &route_ids,
+                inputs,
+            );
+            serde_json::json!({"routes": routes})
         }
         "simple_merge" | "sync_merge" | "thread_join" => serde_json::json!({"status": "merged"}),
         "loop" => {
@@ -298,10 +524,6 @@ async fn execute_stage(
                 serde_json::json!({"route": "done", "iteration": *count})
             }
         }
-        "pause" | "task_approval" => {
-            let decision = props.get("decision").and_then(|v| v.as_str()).unwrap_or("approved");
-            serde_json::json!({"decision": decision})
-        }
         "call_workflow" => serde_json::json!({"status": "called"}),
         "string_template" => {
             let template = props.get("template").and_then(|v| v.as_str()).unwrap_or("");
@@ -315,16 +537,37 @@ async fn execute_stage(
                 .unwrap_or("Say hello");
             runner::run_llm(prompt, inputs, &node.id).await
         }
-        "send_mail" | "notify_user" | "exec_process" | "api_call" => {
-            serde_json::json!({"ok": true, "stage": stage})
-        }
-        "csv_writer" | "csv_reader" | "image_writer" | "image_reader" | "word_doc" | "pdf_generator" => {
-            serde_json::json!({"ok": true, "stage": stage})
-        }
-        "mysql_query" | "postgres_query" | "mongo_query" | "aws_kinesis" | "aws_sqs" | "aws_s3" | "kubernetes" | "cloudwatch" | "inline_script" => {
-            serde_json::json!({"ok": true, "stage": stage})
+        "send_mail"
+        | "notify_user"
+        | "exec_process"
+        | "api_call"
+        | "mysql_query"
+        | "postgres_query"
+        | "mongo_query"
+        | "aws_kinesis"
+        | "aws_sqs"
+        | "aws_s3"
+        | "kubernetes"
+        | "cloudwatch"
+        | "inline_script" => {
+            let result = executors::execute(stage, &props, inputs).await;
+            match result {
+                Ok(data) => {
+                    let ok = task_result_ok(stage, &data);
+                    serde_json::json!({"ok": ok, "data": data})
+                }
+                Err(err) => serde_json::json!({"ok": false, "error": err.to_string()}),
+            }
         }
         _ => serde_json::json!({"ok": true, "stage": stage}),
+    }
+}
+
+fn task_result_ok(stage: &str, data: &Value) -> bool {
+    match stage {
+        "api_call" => data.get("status").and_then(|v| v.as_u64()).map(|s| s < 400).unwrap_or(true),
+        "exec_process" => data.get("status").and_then(|v| v.as_i64()).map(|s| s == 0).unwrap_or(true),
+        _ => true,
     }
 }
 
@@ -387,8 +630,27 @@ fn stage_outputs(node: &StageNode, ports: &Ports, result: &Value) -> HashMap<Str
                 outputs.insert(port.id.clone(), Value::Null);
             }
         }
-        "send_mail" | "notify_user" | "exec_process" | "api_call" => {
-            if let Some(port) = find_port(ports, "success") {
+        "send_mail"
+        | "notify_user"
+        | "exec_process"
+        | "api_call"
+        | "mysql_query"
+        | "postgres_query"
+        | "mongo_query"
+        | "aws_kinesis"
+        | "aws_sqs"
+        | "aws_s3"
+        | "kubernetes"
+        | "cloudwatch"
+        | "inline_script" => {
+            let ok = result.get("ok").and_then(|v| v.as_bool()).unwrap_or(true);
+            if ok {
+                if let Some(port) = find_port(ports, "success") {
+                    outputs.insert(port.id.clone(), result.clone());
+                } else if let Some(port) = ports.outputs.get(0) {
+                    outputs.insert(port.id.clone(), result.clone());
+                }
+            } else if let Some(port) = find_port(ports, "error") {
                 outputs.insert(port.id.clone(), result.clone());
             } else if let Some(port) = ports.outputs.get(0) {
                 outputs.insert(port.id.clone(), result.clone());
@@ -409,6 +671,33 @@ fn stage_outputs(node: &StageNode, ports: &Ports, result: &Value) -> HashMap<Str
     }
 
     outputs
+}
+
+fn build_tokens(workflow: &Workflow, node: &StageNode, output_payloads: &HashMap<String, Value>) -> Vec<Token> {
+    let mut tokens = vec![];
+    for edge in workflow.edges.iter().filter(|e| e.source == node.id) {
+        let source_handle = edge
+            .source_handle
+            .clone()
+            .unwrap_or_else(|| node.ports.clone().unwrap_or_default().outputs.get(0).map(|p| p.id.clone()).unwrap_or_default());
+        if let Some(payload) = output_payloads.get(&source_handle) {
+            let target_port = edge.target_handle.clone().unwrap_or_else(|| {
+                workflow
+                    .nodes
+                    .iter()
+                    .find(|n| n.id == edge.target)
+                    .and_then(|n| n.ports.clone())
+                    .and_then(|p| p.inputs.get(0).map(|port| port.id.clone()))
+                    .unwrap_or_else(|| "in".to_string())
+            });
+            tokens.push(Token {
+                target_node: edge.target.clone(),
+                target_port,
+                payload: payload.clone(),
+            });
+        }
+    }
+    tokens
 }
 
 fn find_port<'a>(ports: &'a Ports, key: &str) -> Option<&'a Port> {

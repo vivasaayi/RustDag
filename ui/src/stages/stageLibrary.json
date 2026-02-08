@@ -23,9 +23,71 @@
           "name": {
             "type": "string",
             "default": "Start"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
           }
-        }
-      }
+        },
+        "required": []
+      },
+      "profiles": [
+        "everyday",
+        "devices",
+        "robots",
+        "advanced"
+      ],
+      "riskLevel": "low"
     },
     {
       "id": "stop",
@@ -49,9 +111,71 @@
           "result": {
             "type": "string",
             "default": "success"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
           }
-        }
-      }
+        },
+        "required": []
+      },
+      "profiles": [
+        "everyday",
+        "devices",
+        "robots",
+        "advanced"
+      ],
+      "riskLevel": "low"
     },
     {
       "id": "loop",
@@ -93,9 +217,70 @@
           "maxIterations": {
             "type": "number",
             "default": 100
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
           }
         }
-      }
+      },
+      "profiles": [
+        "everyday",
+        "devices",
+        "robots",
+        "advanced"
+      ],
+      "riskLevel": "low"
     },
     {
       "id": "parallel_split",
@@ -139,12 +324,71 @@
               "subset"
             ],
             "default": "all"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
           }
-        }
+        },
+        "required": []
       },
       "dynamicPorts": {
         "outputs": true
-      }
+      },
+      "profiles": [
+        "advanced"
+      ],
+      "riskLevel": "low"
     },
     {
       "id": "exclusive_choice",
@@ -183,12 +427,74 @@
         "properties": {
           "expression": {
             "type": "string"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
           }
-        }
+        },
+        "required": []
       },
       "dynamicPorts": {
         "outputs": true
-      }
+      },
+      "profiles": [
+        "everyday",
+        "devices",
+        "robots",
+        "advanced"
+      ],
+      "riskLevel": "low"
     },
     {
       "id": "multi_choice",
@@ -233,12 +539,74 @@
           "rules": {
             "type": "string",
             "description": "Multiple boolean rules"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
           }
-        }
+        },
+        "required": []
       },
       "dynamicPorts": {
         "outputs": true
-      }
+      },
+      "profiles": [
+        "everyday",
+        "devices",
+        "robots",
+        "advanced"
+      ],
+      "riskLevel": "low"
     },
     {
       "id": "thread_split",
@@ -276,12 +644,71 @@
           },
           "itemsExpression": {
             "type": "string"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
           }
-        }
+        },
+        "required": []
       },
       "dynamicPorts": {
         "outputs": true
-      }
+      },
+      "profiles": [
+        "advanced"
+      ],
+      "riskLevel": "low"
     },
     {
       "id": "thread_join",
@@ -315,12 +742,71 @@
               "any"
             ],
             "default": "all"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
           }
-        }
+        },
+        "required": []
       },
       "dynamicPorts": {
         "inputs": true
-      }
+      },
+      "profiles": [
+        "advanced"
+      ],
+      "riskLevel": "low"
     },
     {
       "id": "simple_merge",
@@ -354,12 +840,74 @@
               "all"
             ],
             "default": "any"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
           }
-        }
+        },
+        "required": []
       },
       "dynamicPorts": {
         "inputs": true
-      }
+      },
+      "profiles": [
+        "everyday",
+        "devices",
+        "robots",
+        "advanced"
+      ],
+      "riskLevel": "low"
     },
     {
       "id": "sync_merge",
@@ -393,12 +941,71 @@
               "any"
             ],
             "default": "all"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
           }
-        }
+        },
+        "required": []
       },
       "dynamicPorts": {
         "inputs": true
-      }
+      },
+      "profiles": [
+        "advanced"
+      ],
+      "riskLevel": "low"
     },
     {
       "id": "pause",
@@ -441,9 +1048,71 @@
           "timeoutMinutes": {
             "type": "number",
             "default": 60
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
           }
-        }
-      }
+        },
+        "required": []
+      },
+      "profiles": [
+        "everyday",
+        "devices",
+        "robots",
+        "advanced"
+      ],
+      "riskLevel": "low"
     },
     {
       "id": "trigger",
@@ -477,9 +1146,91 @@
           },
           "callbackUrl": {
             "type": "string"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
+          },
+          "timezone": {
+            "type": "string",
+            "default": "UTC"
+          },
+          "dedupeKey": {
+            "type": "string"
+          },
+          "quietHoursStart": {
+            "type": "string"
+          },
+          "quietHoursEnd": {
+            "type": "string"
+          },
+          "webhookSecretRef": {
+            "type": "string",
+            "description": "secret://webhook_signing_key"
+          },
+          "eventName": {
+            "type": "string"
           }
-        }
-      }
+        },
+        "required": []
+      },
+      "profiles": [
+        "everyday",
+        "devices",
+        "robots",
+        "advanced"
+      ],
+      "riskLevel": "low"
     },
     {
       "id": "call_workflow",
@@ -520,9 +1271,70 @@
           "waitForCompletion": {
             "type": "boolean",
             "default": true
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
           }
         }
-      }
+      },
+      "profiles": [
+        "everyday",
+        "devices",
+        "robots",
+        "advanced"
+      ],
+      "riskLevel": "low"
     },
     {
       "id": "send_mail",
@@ -555,7 +1367,9 @@
         "type": "object",
         "required": [
           "to",
-          "subject"
+          "subject",
+          "smtpHost",
+          "from"
         ],
         "properties": {
           "to": {
@@ -566,9 +1380,109 @@
           },
           "body": {
             "type": "string"
+          },
+          "smtpHost": {
+            "type": "string"
+          },
+          "smtpPort": {
+            "type": "number",
+            "default": 587
+          },
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "from": {
+            "type": "string"
+          },
+          "useTls": {
+            "type": "boolean",
+            "default": true
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
+          },
+          "cc": {
+            "type": "string"
+          },
+          "bcc": {
+            "type": "string"
+          },
+          "attachments": {
+            "type": "string"
+          },
+          "replyTo": {
+            "type": "string"
+          },
+          "templateId": {
+            "type": "string"
+          },
+          "secretRef": {
+            "type": "string",
+            "description": "secret://smtp_default_password"
           }
         }
-      }
+      },
+      "profiles": [
+        "everyday",
+        "devices",
+        "robots",
+        "advanced"
+      ],
+      "riskLevel": "medium"
     },
     {
       "id": "notify_user",
@@ -605,9 +1519,73 @@
           },
           "message": {
             "type": "string"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
           }
-        }
-      }
+        },
+        "required": [
+          "message"
+        ]
+      },
+      "profiles": [
+        "everyday",
+        "devices",
+        "robots",
+        "advanced"
+      ],
+      "riskLevel": "medium"
     },
     {
       "id": "string_template",
@@ -636,9 +1614,71 @@
         "properties": {
           "template": {
             "type": "string"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
           }
-        }
-      }
+        },
+        "required": []
+      },
+      "profiles": [
+        "everyday",
+        "devices",
+        "robots",
+        "advanced"
+      ],
+      "riskLevel": "medium"
     },
     {
       "id": "llm_agent",
@@ -679,9 +1719,71 @@
           "temperature": {
             "type": "number",
             "default": 0.2
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
           }
-        }
-      }
+        },
+        "required": []
+      },
+      "profiles": [
+        "everyday",
+        "devices",
+        "robots",
+        "advanced"
+      ],
+      "riskLevel": "medium"
     },
     {
       "id": "exec_process",
@@ -730,9 +1832,67 @@
           "timeoutSeconds": {
             "type": "number",
             "default": 60
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
           }
         }
-      }
+      },
+      "profiles": [
+        "advanced"
+      ],
+      "riskLevel": "medium"
     },
     {
       "id": "custom_llm_agent",
@@ -773,9 +1933,71 @@
           "temperature": {
             "type": "number",
             "default": 0.2
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
           }
-        }
-      }
+        },
+        "required": []
+      },
+      "profiles": [
+        "everyday",
+        "devices",
+        "robots",
+        "advanced"
+      ],
+      "riskLevel": "medium"
     },
     {
       "id": "task_approval",
@@ -813,9 +2035,71 @@
           "timeoutMinutes": {
             "type": "number",
             "default": 60
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
           }
-        }
-      }
+        },
+        "required": []
+      },
+      "profiles": [
+        "everyday",
+        "devices",
+        "robots",
+        "advanced"
+      ],
+      "riskLevel": "medium"
     },
     {
       "id": "api_call",
@@ -875,9 +2159,93 @@
           },
           "auth": {
             "type": "string"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
+          },
+          "authType": {
+            "type": "string",
+            "enum": [
+              "none",
+              "basic",
+              "bearer",
+              "api_key",
+              "oauth2"
+            ],
+            "default": "none"
+          },
+          "secretRef": {
+            "type": "string",
+            "description": "secret://api_prod_token"
+          },
+          "successCodes": {
+            "type": "string",
+            "default": "200,201,202,204"
+          },
+          "responsePath": {
+            "type": "string"
+          },
+          "followRedirects": {
+            "type": "boolean",
+            "default": true
           }
         }
-      }
+      },
+      "profiles": [
+        "advanced"
+      ],
+      "riskLevel": "medium"
     },
     {
       "id": "csv_writer",
@@ -915,9 +2283,68 @@
           "delimiter": {
             "type": "string",
             "default": ","
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
           }
-        }
-      }
+        },
+        "required": []
+      },
+      "profiles": [
+        "advanced"
+      ],
+      "riskLevel": "medium"
     },
     {
       "id": "csv_reader",
@@ -955,9 +2382,68 @@
           "delimiter": {
             "type": "string",
             "default": ","
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
           }
-        }
-      }
+        },
+        "required": []
+      },
+      "profiles": [
+        "advanced"
+      ],
+      "riskLevel": "medium"
     },
     {
       "id": "image_writer",
@@ -999,9 +2485,68 @@
               "jpg",
               "webp"
             ]
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
           }
-        }
-      }
+        },
+        "required": []
+      },
+      "profiles": [
+        "advanced"
+      ],
+      "riskLevel": "medium"
     },
     {
       "id": "image_reader",
@@ -1035,9 +2580,68 @@
         "properties": {
           "path": {
             "type": "string"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
           }
-        }
-      }
+        },
+        "required": []
+      },
+      "profiles": [
+        "advanced"
+      ],
+      "riskLevel": "medium"
     },
     {
       "id": "word_doc",
@@ -1074,9 +2678,68 @@
           },
           "outputPath": {
             "type": "string"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
           }
-        }
-      }
+        },
+        "required": []
+      },
+      "profiles": [
+        "advanced"
+      ],
+      "riskLevel": "medium"
     },
     {
       "id": "pdf_generator",
@@ -1113,9 +2776,68 @@
           },
           "outputPath": {
             "type": "string"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
           }
-        }
-      }
+        },
+        "required": []
+      },
+      "profiles": [
+        "advanced"
+      ],
+      "riskLevel": "medium"
     },
     {
       "id": "mysql_query",
@@ -1152,9 +2874,75 @@
           },
           "query": {
             "type": "string"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
+          },
+          "dbSecretRef": {
+            "type": "string",
+            "description": "secret://mysql_prod"
           }
-        }
-      }
+        },
+        "required": []
+      },
+      "profiles": [
+        "advanced"
+      ],
+      "riskLevel": "high",
+      "requiredCapabilities": [
+        "db_driver"
+      ]
     },
     {
       "id": "postgres_query",
@@ -1191,9 +2979,75 @@
           },
           "query": {
             "type": "string"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
+          },
+          "dbSecretRef": {
+            "type": "string",
+            "description": "secret://postgres_prod"
           }
-        }
-      }
+        },
+        "required": []
+      },
+      "profiles": [
+        "advanced"
+      ],
+      "riskLevel": "high",
+      "requiredCapabilities": [
+        "db_driver"
+      ]
     },
     {
       "id": "mongo_query",
@@ -1236,9 +3090,81 @@
           },
           "filter": {
             "type": "string"
+          },
+          "database": {
+            "type": "string"
+          },
+          "document": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
+          },
+          "dbSecretRef": {
+            "type": "string",
+            "description": "secret://mongo_prod"
           }
-        }
-      }
+        },
+        "required": []
+      },
+      "profiles": [
+        "advanced"
+      ],
+      "riskLevel": "high",
+      "requiredCapabilities": [
+        "db_driver"
+      ]
     },
     {
       "id": "aws_kinesis",
@@ -1279,12 +3205,83 @@
           "action": {
             "type": "string",
             "enum": [
-              "put",
-              "get"
+              "put"
             ]
+          },
+          "data": {
+            "type": "string"
+          },
+          "partitionKey": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
+          },
+          "awsSecretRef": {
+            "type": "string",
+            "description": "secret://aws_prod"
           }
-        }
-      }
+        },
+        "required": []
+      },
+      "profiles": [
+        "advanced"
+      ],
+      "riskLevel": "high",
+      "requiredCapabilities": [
+        "aws_api"
+      ]
     },
     {
       "id": "aws_sqs",
@@ -1329,9 +3326,85 @@
               "receive",
               "delete"
             ]
+          },
+          "body": {
+            "type": "string"
+          },
+          "receiptHandle": {
+            "type": "string"
+          },
+          "max": {
+            "type": "number",
+            "default": 1
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
+          },
+          "awsSecretRef": {
+            "type": "string",
+            "description": "secret://aws_prod"
           }
-        }
-      }
+        },
+        "required": []
+      },
+      "profiles": [
+        "advanced"
+      ],
+      "riskLevel": "high",
+      "requiredCapabilities": [
+        "aws_api"
+      ]
     },
     {
       "id": "aws_s3",
@@ -1377,9 +3450,84 @@
               "delete",
               "list"
             ]
+          },
+          "key": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "prefix": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
+          },
+          "awsSecretRef": {
+            "type": "string",
+            "description": "secret://aws_prod"
           }
-        }
-      }
+        },
+        "required": []
+      },
+      "profiles": [
+        "advanced"
+      ],
+      "riskLevel": "high",
+      "requiredCapabilities": [
+        "aws_api"
+      ]
     },
     {
       "id": "kubernetes",
@@ -1424,13 +3572,86 @@
             "type": "string",
             "enum": [
               "get",
+              "list",
               "apply",
-              "delete",
-              "scale"
+              "delete"
             ]
+          },
+          "manifest": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
+          },
+          "kubeSecretRef": {
+            "type": "string",
+            "description": "secret://kubeconfig_prod"
+          },
+          "dryRunServer": {
+            "type": "boolean",
+            "default": false
           }
-        }
-      }
+        },
+        "required": []
+      },
+      "profiles": [
+        "advanced"
+      ],
+      "riskLevel": "high",
+      "requiredCapabilities": [
+        "kubernetes_api"
+      ]
     },
     {
       "id": "cloudwatch",
@@ -1470,9 +3691,90 @@
           },
           "query": {
             "type": "string"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "put_metric"
+            ]
+          },
+          "namespace": {
+            "type": "string"
+          },
+          "metricName": {
+            "type": "string"
+          },
+          "value": {
+            "type": "number"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
+          },
+          "awsSecretRef": {
+            "type": "string",
+            "description": "secret://aws_prod"
           }
-        }
-      }
+        },
+        "required": []
+      },
+      "profiles": [
+        "advanced"
+      ],
+      "riskLevel": "high",
+      "requiredCapabilities": [
+        "aws_api"
+      ]
     },
     {
       "id": "inline_script",
@@ -1514,8 +3816,1859 @@
           },
           "code": {
             "type": "string"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "required": []
+      },
+      "profiles": [
+        "advanced"
+      ],
+      "riskLevel": "high"
+    },
+    {
+      "id": "ask_user",
+      "label": "Ask User",
+      "category": "Everyday",
+      "icon": "ASK",
+      "description": "Ask a question and wait for response",
+      "profiles": [
+        "everyday",
+        "devices",
+        "robots",
+        "advanced"
+      ],
+      "riskLevel": "low",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "control"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "submitted",
+            "label": "Submitted",
+            "dataType": "control"
+          },
+          {
+            "id": "timeout",
+            "label": "Timeout",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "required": [
+          "question"
+        ],
+        "properties": {
+          "question": {
+            "type": "string"
+          },
+          "options": {
+            "type": "string"
+          },
+          "timeoutMinutes": {
+            "type": "number",
+            "default": 30
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
           }
         }
+      }
+    },
+    {
+      "id": "reminder",
+      "label": "Reminder",
+      "category": "Everyday",
+      "icon": "REM",
+      "description": "Create reminder notification",
+      "profiles": [
+        "everyday",
+        "devices",
+        "robots",
+        "advanced"
+      ],
+      "riskLevel": "low",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "control"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "success",
+            "label": "Success",
+            "dataType": "control"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "required": [
+          "title",
+          "at"
+        ],
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
+          }
+        }
+      }
+    },
+    {
+      "id": "calendar_event",
+      "label": "Calendar Event",
+      "category": "Everyday",
+      "icon": "CAL",
+      "description": "Create calendar event",
+      "profiles": [
+        "everyday",
+        "devices",
+        "robots",
+        "advanced"
+      ],
+      "riskLevel": "low",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "control"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "success",
+            "label": "Success",
+            "dataType": "control"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "required": [
+          "title",
+          "startTime",
+          "endTime"
+        ],
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "google",
+              "outlook",
+              "local"
+            ],
+            "default": "local"
+          },
+          "title": {
+            "type": "string"
+          },
+          "startTime": {
+            "type": "string"
+          },
+          "endTime": {
+            "type": "string"
+          },
+          "attendees": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
+          }
+        }
+      }
+    },
+    {
+      "id": "translate_text",
+      "label": "Translate Text",
+      "category": "Everyday",
+      "icon": "TRN",
+      "description": "Translate text between languages",
+      "profiles": [
+        "everyday",
+        "devices",
+        "robots",
+        "advanced"
+      ],
+      "riskLevel": "low",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "data"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "out",
+            "label": "Out",
+            "dataType": "data"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "required": [
+          "toLanguage"
+        ],
+        "properties": {
+          "toLanguage": {
+            "type": "string"
+          },
+          "fromLanguage": {
+            "type": "string",
+            "default": "auto"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
+          }
+        }
+      }
+    },
+    {
+      "id": "weather_check",
+      "label": "Weather Check",
+      "category": "Everyday",
+      "icon": "WTH",
+      "description": "Fetch weather for location",
+      "profiles": [
+        "everyday",
+        "devices",
+        "robots",
+        "advanced"
+      ],
+      "riskLevel": "low",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "control"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "ok",
+            "label": "OK",
+            "dataType": "data"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "required": [
+          "location"
+        ],
+        "properties": {
+          "location": {
+            "type": "string"
+          },
+          "units": {
+            "type": "string",
+            "enum": [
+              "metric",
+              "imperial"
+            ],
+            "default": "metric"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
+          }
+        }
+      }
+    },
+    {
+      "id": "device_command",
+      "label": "Device Command",
+      "category": "Devices",
+      "icon": "DEV",
+      "description": "Send command to a smart device",
+      "profiles": [
+        "devices",
+        "robots",
+        "advanced"
+      ],
+      "riskLevel": "medium",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "control"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "success",
+            "label": "Success",
+            "dataType": "control"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "required": [
+          "platform",
+          "deviceId",
+          "action"
+        ],
+        "properties": {
+          "platform": {
+            "type": "string",
+            "enum": [
+              "home_assistant",
+              "matter",
+              "alexa",
+              "google_home"
+            ]
+          },
+          "deviceId": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "requirePresenceCheck": {
+            "type": "boolean",
+            "default": true
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
+          },
+          "zone": {
+            "type": "string"
+          },
+          "maxPowerPercent": {
+            "type": "number",
+            "default": 80
+          },
+          "confirmBeforeExecute": {
+            "type": "boolean",
+            "default": true
+          },
+          "deviceSecretRef": {
+            "type": "string",
+            "description": "secret://home_assistant_token"
+          }
+        }
+      },
+      "requiredCapabilities": [
+        "device_api"
+      ]
+    },
+    {
+      "id": "scene_activate",
+      "label": "Activate Scene",
+      "category": "Devices",
+      "icon": "SCN",
+      "description": "Activate a predefined home scene",
+      "profiles": [
+        "devices",
+        "robots",
+        "advanced"
+      ],
+      "riskLevel": "medium",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "control"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "success",
+            "label": "Success",
+            "dataType": "control"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "required": [
+          "sceneId"
+        ],
+        "properties": {
+          "sceneId": {
+            "type": "string"
+          },
+          "delaySeconds": {
+            "type": "number",
+            "default": 0
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
+          },
+          "requirePresenceCheck": {
+            "type": "boolean",
+            "default": true
+          },
+          "confirmBeforeExecute": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      },
+      "requiredCapabilities": [
+        "device_api"
+      ]
+    },
+    {
+      "id": "camera_event",
+      "label": "Camera Event",
+      "category": "Devices",
+      "icon": "CAM",
+      "description": "Wait for camera detection event",
+      "profiles": [
+        "devices",
+        "robots",
+        "advanced"
+      ],
+      "riskLevel": "medium",
+      "ports": {
+        "inputs": [],
+        "outputs": [
+          {
+            "id": "person",
+            "label": "Person",
+            "dataType": "control"
+          },
+          {
+            "id": "pet",
+            "label": "Pet",
+            "dataType": "control"
+          },
+          {
+            "id": "package",
+            "label": "Package",
+            "dataType": "control"
+          },
+          {
+            "id": "none",
+            "label": "None",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "cameraId": {
+            "type": "string"
+          },
+          "timeoutSeconds": {
+            "type": "number",
+            "default": 120
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
+          },
+          "minConfidence": {
+            "type": "number",
+            "default": 0.7
+          }
+        },
+        "required": []
+      },
+      "requiredCapabilities": [
+        "camera_sensor"
+      ]
+    },
+    {
+      "id": "robot_command",
+      "label": "Robot Command",
+      "category": "Robots",
+      "icon": "BOT",
+      "description": "Send task to household robot",
+      "profiles": [
+        "robots",
+        "advanced"
+      ],
+      "riskLevel": "high",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "control"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "success",
+            "label": "Success",
+            "dataType": "control"
+          },
+          {
+            "id": "blocked",
+            "label": "Blocked",
+            "dataType": "control"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "required": [
+          "robotId",
+          "command"
+        ],
+        "properties": {
+          "robotId": {
+            "type": "string"
+          },
+          "command": {
+            "type": "string",
+            "enum": [
+              "navigate",
+              "speak",
+              "pickup",
+              "dropoff",
+              "dock"
+            ]
+          },
+          "payload": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
+          },
+          "safeSpeed": {
+            "type": "number",
+            "default": 1
+          },
+          "allowedZones": {
+            "type": "string"
+          },
+          "emergencyStopTopic": {
+            "type": "string",
+            "default": "robot/emergency_stop"
+          },
+          "robotSecretRef": {
+            "type": "string",
+            "description": "secret://robot_access_token"
+          }
+        }
+      },
+      "requiredCapabilities": [
+        "robot_api",
+        "safety_channel"
+      ]
+    },
+    {
+      "id": "robot_navigate",
+      "label": "Robot Navigate",
+      "category": "Robots",
+      "icon": "NAV",
+      "description": "Navigate robot to destination",
+      "profiles": [
+        "robots",
+        "advanced"
+      ],
+      "riskLevel": "high",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "control"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "arrived",
+            "label": "Arrived",
+            "dataType": "control"
+          },
+          {
+            "id": "blocked",
+            "label": "Blocked",
+            "dataType": "control"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "required": [
+          "destination"
+        ],
+        "properties": {
+          "destination": {
+            "type": "string"
+          },
+          "speed": {
+            "type": "number",
+            "default": 1
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
+          },
+          "maxDistanceMeters": {
+            "type": "number",
+            "default": 25
+          },
+          "safeSpeed": {
+            "type": "number",
+            "default": 1
+          },
+          "allowedZones": {
+            "type": "string"
+          }
+        }
+      },
+      "requiredCapabilities": [
+        "robot_navigation",
+        "safety_channel"
+      ]
+    },
+    {
+      "id": "robot_speak",
+      "label": "Robot Speak",
+      "category": "Robots",
+      "icon": "SPK",
+      "description": "Robot text to speech",
+      "profiles": [
+        "robots",
+        "advanced"
+      ],
+      "riskLevel": "medium",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "control"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "spoken",
+            "label": "Spoken",
+            "dataType": "control"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "voice": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
+          },
+          "volume": {
+            "type": "number",
+            "default": 60
+          },
+          "language": {
+            "type": "string",
+            "default": "en-US"
+          }
+        }
+      },
+      "requiredCapabilities": [
+        "speaker"
+      ]
+    },
+    {
+      "id": "battery_guard",
+      "label": "Battery Guard",
+      "category": "Safety",
+      "icon": "BAT",
+      "description": "Route by battery health",
+      "profiles": [
+        "devices",
+        "robots",
+        "advanced"
+      ],
+      "riskLevel": "low",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "control"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "ok",
+            "label": "OK",
+            "dataType": "control"
+          },
+          {
+            "id": "low",
+            "label": "Low",
+            "dataType": "control"
+          },
+          {
+            "id": "critical",
+            "label": "Critical",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "lowThreshold": {
+            "type": "number",
+            "default": 30
+          },
+          "criticalThreshold": {
+            "type": "number",
+            "default": 10
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "id": "safety_guard",
+      "label": "Safety Guard",
+      "category": "Safety",
+      "icon": "SAFE",
+      "description": "Apply policy before real-world actions",
+      "profiles": [
+        "devices",
+        "robots",
+        "advanced"
+      ],
+      "riskLevel": "low",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "control"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "allowed",
+            "label": "Allowed",
+            "dataType": "control"
+          },
+          {
+            "id": "blocked",
+            "label": "Blocked",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "policy": {
+            "type": "string"
+          },
+          "strictMode": {
+            "type": "boolean",
+            "default": true
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "id": "human_presence_check",
+      "label": "Human Presence Check",
+      "category": "Safety",
+      "icon": "HUM",
+      "description": "Ensure no unsafe nearby presence",
+      "profiles": [
+        "devices",
+        "robots",
+        "advanced"
+      ],
+      "riskLevel": "low",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "control"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "detected",
+            "label": "Detected",
+            "dataType": "control"
+          },
+          {
+            "id": "clear",
+            "label": "Clear",
+            "dataType": "control"
+          },
+          {
+            "id": "error",
+            "label": "Error",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "zone": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "camera",
+              "lidar",
+              "motion_sensor"
+            ],
+            "default": "camera"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "id": "manual_override",
+      "label": "Manual Override",
+      "category": "Safety",
+      "icon": "OVR",
+      "description": "Wait for manual confirmation",
+      "profiles": [
+        "devices",
+        "robots",
+        "advanced"
+      ],
+      "riskLevel": "low",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "control"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "continue",
+            "label": "Continue",
+            "dataType": "control"
+          },
+          {
+            "id": "cancel",
+            "label": "Cancel",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "requiredRole": {
+            "type": "string",
+            "default": "owner"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "id": "emergency_stop",
+      "label": "Emergency Stop",
+      "category": "Safety",
+      "icon": "STOP",
+      "description": "Immediate stop for device/robot actions",
+      "profiles": [
+        "devices",
+        "robots",
+        "advanced"
+      ],
+      "riskLevel": "low",
+      "ports": {
+        "inputs": [
+          {
+            "id": "in",
+            "label": "In",
+            "dataType": "control"
+          }
+        ],
+        "outputs": [
+          {
+            "id": "stopped",
+            "label": "Stopped",
+            "dataType": "control"
+          }
+        ]
+      },
+      "propertiesSchema": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "executionMode": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ai_assisted",
+              "ai_orchestrated"
+            ],
+            "default": "deterministic"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 30000
+          },
+          "retryMax": {
+            "type": "number",
+            "default": 0
+          },
+          "retryBackoffMs": {
+            "type": "number",
+            "default": 1000
+          },
+          "onError": {
+            "type": "string",
+            "enum": [
+              "fail",
+              "continue",
+              "route"
+            ],
+            "default": "fail"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiredSecrets": {
+            "type": "string",
+            "default": ""
+          },
+          "requiredCapabilities": {
+            "type": "string",
+            "default": ""
+          },
+          "auditTag": {
+            "type": "string",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "required": []
       }
     }
   ]
