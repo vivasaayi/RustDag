@@ -719,3 +719,154 @@ fn render_template(template: &str, inputs: &HashMap<String, Value>) -> String {
     }
     rendered
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn port(id: &str) -> Port {
+        Port {
+            id: id.to_string(),
+            label: None,
+            data_type: None,
+        }
+    }
+
+    fn ports(inputs: &[&str], outputs: &[&str]) -> Ports {
+        Ports {
+            inputs: inputs.iter().map(|id| port(id)).collect(),
+            outputs: outputs.iter().map(|id| port(id)).collect(),
+        }
+    }
+
+    #[tokio::test]
+    async fn pause_stage_waits_and_resumes_to_approved_path() {
+        let workflow = Workflow {
+            version: Some(1),
+            nodes: vec![
+                StageNode {
+                    id: "start".to_string(),
+                    stage_id: "start".to_string(),
+                    label: None,
+                    properties: None,
+                    ports: Some(ports(&[], &["out"])),
+                },
+                StageNode {
+                    id: "pause1".to_string(),
+                    stage_id: "pause".to_string(),
+                    label: None,
+                    properties: None,
+                    ports: Some(ports(&["in"], &["approved", "rejected"])),
+                },
+                StageNode {
+                    id: "done".to_string(),
+                    stage_id: "stop".to_string(),
+                    label: None,
+                    properties: None,
+                    ports: Some(ports(&["in"], &[])),
+                },
+            ],
+            edges: vec![
+                Edge {
+                    id: "e1".to_string(),
+                    source: "start".to_string(),
+                    target: "pause1".to_string(),
+                    source_handle: Some("out".to_string()),
+                    target_handle: Some("in".to_string()),
+                },
+                Edge {
+                    id: "e2".to_string(),
+                    source: "pause1".to_string(),
+                    target: "done".to_string(),
+                    source_handle: Some("approved".to_string()),
+                    target_handle: Some("in".to_string()),
+                },
+            ],
+        };
+
+        let mut instance = workflow.new_instance();
+        let first = instance.run().await;
+        assert_eq!(first.status, "waiting");
+        assert_eq!(first.pending.len(), 1);
+        assert_eq!(first.pending[0].node_id, "pause1");
+
+        let second = instance
+            .resume(ResumeAction {
+                node_id: "pause1".to_string(),
+                decision: Some("approved".to_string()),
+                payload: None,
+            })
+            .await;
+
+        assert_eq!(second.status, "completed");
+        assert!(second.pending.is_empty());
+        assert!(second.outputs.contains_key("done"));
+    }
+
+    #[tokio::test]
+    async fn exclusive_choice_routes_to_selected_output() {
+        let workflow = Workflow {
+            version: Some(1),
+            nodes: vec![
+                StageNode {
+                    id: "start".to_string(),
+                    stage_id: "start".to_string(),
+                    label: None,
+                    properties: None,
+                    ports: Some(ports(&[], &["out"])),
+                },
+                StageNode {
+                    id: "choice".to_string(),
+                    stage_id: "exclusive_choice".to_string(),
+                    label: None,
+                    properties: Some(serde_json::json!({"expression": "path_a"})),
+                    ports: Some(ports(&["in"], &["path_a", "path_b", "default"])),
+                },
+                StageNode {
+                    id: "a".to_string(),
+                    stage_id: "stop".to_string(),
+                    label: None,
+                    properties: None,
+                    ports: Some(ports(&["in"], &[])),
+                },
+                StageNode {
+                    id: "b".to_string(),
+                    stage_id: "stop".to_string(),
+                    label: None,
+                    properties: None,
+                    ports: Some(ports(&["in"], &[])),
+                },
+            ],
+            edges: vec![
+                Edge {
+                    id: "e1".to_string(),
+                    source: "start".to_string(),
+                    target: "choice".to_string(),
+                    source_handle: Some("out".to_string()),
+                    target_handle: Some("in".to_string()),
+                },
+                Edge {
+                    id: "e2".to_string(),
+                    source: "choice".to_string(),
+                    target: "a".to_string(),
+                    source_handle: Some("path_a".to_string()),
+                    target_handle: Some("in".to_string()),
+                },
+                Edge {
+                    id: "e3".to_string(),
+                    source: "choice".to_string(),
+                    target: "b".to_string(),
+                    source_handle: Some("path_b".to_string()),
+                    target_handle: Some("in".to_string()),
+                },
+            ],
+        };
+
+        let mut instance = workflow.new_instance();
+        let result = instance.run().await;
+
+        assert_eq!(result.status, "completed");
+        assert!(result.outputs.contains_key("a"));
+        assert!(!result.outputs.contains_key("b"));
+    }
+}

@@ -341,3 +341,34 @@ fn is_daily_nine_due(last_run_at: u64, now_ms: u64) -> bool {
     let today_nine_ms = today_nine_ms as u64;
     now_ms >= today_nine_ms && last_run_at < today_nine_ms
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn schedule_due_every_fifteen_minutes() {
+        let now = 1_000_000_u64;
+        assert!(is_schedule_due("every_15m", now - (15 * 60 * 1000), now));
+        assert!(!is_schedule_due("every_15m", now - (14 * 60 * 1000), now));
+    }
+
+    #[test]
+    fn schedule_due_hourly() {
+        let now = 10_000_000_u64;
+        assert!(is_schedule_due("hourly", now - (60 * 60 * 1000), now));
+        assert!(!is_schedule_due("hourly", now - (59 * 60 * 1000), now));
+    }
+
+    #[test]
+    fn manual_schedule_is_never_due() {
+        let now = now_millis();
+        assert!(!is_schedule_due("manual", 0, now));
+    }
+
+    #[test]
+    fn daily_schedule_not_due_after_same_day_run() {
+        let now = now_millis();
+        assert!(!is_schedule_due("daily_9am", now, now));
+    }
+}

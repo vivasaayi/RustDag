@@ -262,3 +262,79 @@ fn is_truthy(value: &Value) -> bool {
         Value::Null => false,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn exclusive_picks_matching_route_from_conditions() {
+        let routes = vec!["approved".to_string(), "rejected".to_string(), "default".to_string()];
+        let mut inputs = HashMap::new();
+        inputs.insert("score".to_string(), json!(91));
+
+        let selected = evaluate_exclusive(
+            Some("approved: score >= 90; rejected: score < 90; default: true"),
+            &routes,
+            &inputs,
+        );
+
+        assert_eq!(selected, "approved");
+    }
+
+    #[test]
+    fn exclusive_falls_back_to_default_route() {
+        let routes = vec!["x".to_string(), "default".to_string()];
+        let mut inputs = HashMap::new();
+        inputs.insert("flag".to_string(), json!(false));
+
+        let selected = evaluate_exclusive(Some("x: flag == true"), &routes, &inputs);
+        assert_eq!(selected, "default");
+    }
+
+    #[test]
+    fn multi_choice_selects_multiple_routes() {
+        let routes = vec![
+            "email".to_string(),
+            "sms".to_string(),
+            "push".to_string(),
+            "default".to_string(),
+        ];
+        let mut inputs = HashMap::new();
+        inputs.insert("priority".to_string(), json!("high"));
+        inputs.insert("phone".to_string(), json!("123"));
+
+        let selected = evaluate_multi(
+            Some("email: priority == \"high\"; sms: exists(phone); push: priority == \"critical\""),
+            &routes,
+            &inputs,
+        );
+
+        assert_eq!(selected, vec!["email".to_string(), "sms".to_string()]);
+    }
+
+    #[test]
+    fn multi_choice_uses_default_when_none_match() {
+        let routes = vec!["a".to_string(), "default".to_string()];
+        let inputs = HashMap::new();
+        let selected = evaluate_multi(Some("a: false"), &routes, &inputs);
+        assert_eq!(selected, vec!["default".to_string()]);
+    }
+
+    #[test]
+    fn contains_and_logical_operators_work() {
+        let routes = vec!["go".to_string(), "default".to_string()];
+        let mut inputs = HashMap::new();
+        inputs.insert("text".to_string(), json!("hello world"));
+        inputs.insert("enabled".to_string(), json!(true));
+
+        let selected = evaluate_exclusive(
+            Some("go: contains(text, \"world\") && enabled == true; default: true"),
+            &routes,
+            &inputs,
+        );
+
+        assert_eq!(selected, "go");
+    }
+}
