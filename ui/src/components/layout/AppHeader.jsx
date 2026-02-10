@@ -1,4 +1,5 @@
 import React from 'react';
+import HeadlessSelect from '../ui/HeadlessSelect.jsx';
 
 export default function AppHeader({
   activeView,
@@ -50,16 +51,17 @@ export default function AppHeader({
       </div>
 
       <div className="header-actions">
-        <select
-          className="input mode-select"
+        <HeadlessSelect
+          className="mode-select"
           value={profileMode}
-          onChange={(event) => setProfileMode(event.target.value)}
-        >
-          <option value="everyday">Everyday</option>
-          <option value="devices">Home Devices</option>
-          <option value="robots">Robots + Devices</option>
-          <option value="advanced">Advanced Builder</option>
-        </select>
+          onValueChange={setProfileMode}
+          options={[
+            { value: 'everyday', label: 'Everyday' },
+            { value: 'devices', label: 'Home Devices' },
+            { value: 'robots', label: 'Robots + Devices' },
+            { value: 'advanced', label: 'Advanced Builder' },
+          ]}
+        />
 
         {activeView === 'executions' && (
           <button className="btn ghost" onClick={onRefreshExecutions}>

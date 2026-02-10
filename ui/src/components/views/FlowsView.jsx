@@ -1,4 +1,5 @@
 import React from 'react';
+import HeadlessSelect from '../ui/HeadlessSelect.jsx';
 
 export default function FlowsView({
   flowQuery,
@@ -37,22 +38,37 @@ export default function FlowsView({
           value={flowQuery}
           onChange={(event) => setFlowQuery(event.target.value)}
         />
-        <select className="input table-input" value={flowTypeFilter} onChange={(event) => setFlowTypeFilter(event.target.value)}>
-          <option value="all">all types</option>
-          <option value="predefined">predefined</option>
-          <option value="custom">custom</option>
-        </select>
-        <select className="input table-input" value={flowStateFilter} onChange={(event) => setFlowStateFilter(event.target.value)}>
-          <option value="all">all states</option>
-          <option value="enabled">enabled</option>
-          <option value="disabled">disabled</option>
-        </select>
-        <select className="input table-input" value={flowSort} onChange={(event) => setFlowSort(event.target.value)}>
-          <option value="name_asc">name a-z</option>
-          <option value="name_desc">name z-a</option>
-          <option value="last_run_desc">last run latest</option>
-          <option value="last_run_asc">last run oldest</option>
-        </select>
+        <HeadlessSelect
+          className="table-input"
+          value={flowTypeFilter}
+          onValueChange={setFlowTypeFilter}
+          options={[
+            { value: 'all', label: 'all types' },
+            { value: 'predefined', label: 'predefined' },
+            { value: 'custom', label: 'custom' },
+          ]}
+        />
+        <HeadlessSelect
+          className="table-input"
+          value={flowStateFilter}
+          onValueChange={setFlowStateFilter}
+          options={[
+            { value: 'all', label: 'all states' },
+            { value: 'enabled', label: 'enabled' },
+            { value: 'disabled', label: 'disabled' },
+          ]}
+        />
+        <HeadlessSelect
+          className="table-input"
+          value={flowSort}
+          onValueChange={setFlowSort}
+          options={[
+            { value: 'name_asc', label: 'name a-z' },
+            { value: 'name_desc', label: 'name z-a' },
+            { value: 'last_run_desc', label: 'last run latest' },
+            { value: 'last_run_asc', label: 'last run oldest' },
+          ]}
+        />
       </div>
 
       {flowRows.length === 0 && (

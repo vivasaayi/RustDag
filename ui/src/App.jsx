@@ -424,9 +424,10 @@ export default function App() {
   const selectedNode = nodes.find((node) => node.id === selectedNodeId) || null;
 
   const addStage = useCallback(
-    (stage) => {
-      const position = { x: 120 + Math.random() * 260, y: 120 + Math.random() * 260 };
-      setNodes((nds) => nds.concat(buildNodeFromStage(stage, position)));
+    (stage, position) => {
+      const defaultPosition = { x: 100, y: 100 };
+      const nextPosition = position || defaultPosition;
+      setNodes((nds) => nds.concat(buildNodeFromStage(stage, nextPosition)));
     },
     [setNodes]
   );

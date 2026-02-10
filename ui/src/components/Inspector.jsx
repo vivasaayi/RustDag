@@ -173,6 +173,11 @@ function sectionOrder(section) {
   return order[section] || 99;
 }
 
+function normalizeSchemaGroups(schema) {
+  const groups = schema?.ui?.groups || schema?.groups || [];
+  return Array.isArray(groups) ? groups : [];
+}
+
 export default function Inspector({ node, onUpdateProperties, onUpdatePorts, onRemovePort }) {
   if (!node) {
     return <div className="inspector-empty">Select a stage to edit properties.</div>;
@@ -187,13 +192,58 @@ export default function Inspector({ node, onUpdateProperties, onUpdatePorts, onR
   const dynamicOutputs = stage.dynamicPorts?.outputs;
 
   const groupedFields = useMemo(() => {
-    const groups = {};
-    for (const [key, fieldSchema] of Object.entries(schema.properties || {})) {
-      const section = sectionForField(key);
-      if (!groups[section]) groups[section] = [];
-      groups[section].push([key, fieldSchema]);
+    const fieldEntries = Object.entries(schema.properties || {});
+    const groupSpecs = normalizeSchemaGroups(schema);
+
+    if (groupSpecs.length > 0) {
+      const used = new Set();
+      const built = groupSpecs
+        .map((spec, idx) => {
+          const ids = Array.isArray(spec.fields) ? spec.fields : [];
+          const fields = ids
+            .map((id) => {
+              const fieldSchema = schema?.properties?.[id];
+              if (!fieldSchema) return null;
+              used.add(id);
+              return [id, fieldSchema];
+            })
+            .filter(Boolean);
+          return {
+            id: spec.id || `group_${idx}`,
+            title: spec.title || spec.id || `Group ${idx + 1}`,
+            defaultOpen: spec.defaultOpen !== false,
+            fields,
+          };
+        })
+        .filter((g) => g.fields.length > 0);
+
+      const ungrouped = fieldEntries.filter(([key]) => !used.has(key));
+      if (ungrouped.length > 0) {
+        built.push({
+          id: 'group_ungrouped',
+          title: 'Stage Config',
+          defaultOpen: true,
+          fields: ungrouped,
+        });
+      }
+      return built;
     }
-    return Object.entries(groups).sort((a, b) => sectionOrder(a[0]) - sectionOrder(b[0]));
+
+    const fallbackGroups = {};
+    for (const [key, fieldSchema] of fieldEntries) {
+      const section = sectionForField(key);
+      if (!fallbackGroups[section]) fallbackGroups[section] = [];
+      fallbackGroups[section].push([key, fieldSchema]);
+    }
+
+    return Object.entries(fallbackGroups)
+      .sort((a, b) => sectionOrder(a[0]) - sectionOrder(b[0]))
+      .map(([title, fields]) => ({
+        id: `group_${title.toLowerCase().replace(/\s+/g, '_')}`,
+        title,
+        defaultOpen: title === 'Operations' || title === 'Stage Config',
+        fields,
+      }));
   }, [schema]);
 
   const handleFieldChange = (key, nextValue) => {
@@ -236,20 +286,25 @@ export default function Inspector({ node, onUpdateProperties, onUpdatePorts, onR
         </div>
       </div>
 
-      {groupedFields.map(([section, fields]) => (
-        <div key={section} className="inspector-group">
-          <div className="inspector-group-title">{section}</div>
-          {fields.map(([key, fieldSchema]) => (
-            <Field
-              key={key}
-              name={key}
-              schema={fieldSchema}
-              required={required.has(key)}
-              value={properties[key]}
-              onChange={(value) => handleFieldChange(key, value)}
-            />
-          ))}
-        </div>
+      {groupedFields.map((group) => (
+        <details key={group.id} className="inspector-accordion" open={group.defaultOpen}>
+          <summary className="inspector-accordion-title">
+            <span>{group.title}</span>
+            <span className="inspector-accordion-count">{group.fields.length}</span>
+          </summary>
+          <div className="inspector-accordion-body">
+            {group.fields.map(([key, fieldSchema]) => (
+              <Field
+                key={key}
+                name={key}
+                schema={fieldSchema}
+                required={required.has(key)}
+                value={properties[key]}
+                onChange={(value) => handleFieldChange(key, value)}
+              />
+            ))}
+          </div>
+        </details>
       ))}
 
       {(dynamicInputs || dynamicOutputs) && (

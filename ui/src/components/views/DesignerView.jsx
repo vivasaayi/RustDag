@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import ReactFlow, { Background, Controls, MiniMap } from 'reactflow';
 import Inspector from '../Inspector.jsx';
 import StageNode from '../StageNode.jsx';
@@ -36,8 +36,60 @@ export default function DesignerView({
   setDecisionByNode,
   resumePending,
 }) {
+  const [activeCategory, setActiveCategory] = useState('all');
+  const [reactFlowInstance, setReactFlowInstance] = useState(null);
+  const reactFlowWrapper = useRef(null);
+
+  const categories = useMemo(
+    () => ['all', ...Object.keys(groupedStages)],
+    [groupedStages]
+  );
+
+  const visibleStages = useMemo(() => {
+    if (activeCategory === 'all') {
+      return Object.values(groupedStages).flat();
+    }
+    return groupedStages[activeCategory] || [];
+  }, [groupedStages, activeCategory]);
+
+  const stageMapById = useMemo(() => {
+    const map = {};
+    Object.values(groupedStages).flat().forEach((stage) => {
+      map[stage.id] = stage;
+    });
+    return map;
+  }, [groupedStages]);
+
+  const onPaletteDragStart = (event, stage) => {
+    event.dataTransfer.setData('application/x-flowforge-stage', stage.id);
+    event.dataTransfer.setData('text/plain', stage.id);
+    event.dataTransfer.effectAllowed = 'copy';
+  };
+
+  const onCanvasDragOver = (event) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+  };
+
+  const onCanvasDrop = (event) => {
+    event.preventDefault();
+    const stageId =
+      event.dataTransfer.getData('application/x-flowforge-stage') ||
+      event.dataTransfer.getData('text/plain');
+    if (!stageId || !reactFlowInstance) return;
+    const stage = stageMapById[stageId];
+    if (!stage) return;
+    const bounds = reactFlowWrapper.current?.getBoundingClientRect();
+    if (!bounds) return;
+    const position = reactFlowInstance.project({
+      x: event.clientX - bounds.left,
+      y: event.clientY - bounds.top,
+    });
+    addStage(stage, position);
+  };
+
   return (
-    <>
+    <div className="designer-page">
       <div className="designer">
         <aside className="panel palette">
           <div className="panel-title">Palette</div>
@@ -47,25 +99,34 @@ export default function DesignerView({
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
-          {Object.entries(groupedStages).map(([category, stages]) => (
-            <div key={category}>
-              <div className="section-label">{category}</div>
-              <div className="palette-grid">
-                {stages.map((stage) => (
-                  <button key={stage.id} type="button" className="stage-card" onClick={() => addStage(stage)}>
-                    <div className="stage-icon">{stage.icon || 'ST'}</div>
-                    <div>
-                      <div className="stage-title">{stage.label}</div>
-                      <div className="stage-subtitle">{stage.description}</div>
-                      <div className={`risk-pill risk-${stage.riskLevel || 'medium'}`}>
-                        risk: {stage.riskLevel || 'medium'}
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
+          <div className="palette-categories">
+            {categories.map((category) => (
+              <button
+                key={category}
+                type="button"
+                className={`palette-chip ${activeCategory === category ? 'active' : ''}`}
+                onClick={() => setActiveCategory(category)}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+          <div className="palette-icon-grid">
+            {visibleStages.map((stage) => (
+              <button
+                key={stage.id}
+                type="button"
+                draggable
+                className="palette-icon-btn"
+                title={`${stage.label}\n${stage.description || ''}\nrisk: ${stage.riskLevel || 'medium'}`}
+                onClick={() => addStage(stage)}
+                onDragStart={(event) => onPaletteDragStart(event, stage)}
+              >
+                <span className="palette-icon-main">{stage.icon || 'ST'}</span>
+                <span className="palette-icon-label">{stage.label}</span>
+              </button>
+            ))}
+          </div>
         </aside>
 
         <main className="panel canvas">
@@ -79,7 +140,12 @@ export default function DesignerView({
             <button className="btn ghost">Redo</button>
           </div>
 
-          <div className="canvas-grid">
+          <div
+            className="canvas-grid"
+            ref={reactFlowWrapper}
+            onDragOver={onCanvasDragOver}
+            onDrop={onCanvasDrop}
+          >
             <ReactFlow
               nodes={nodes}
               edges={edges}
@@ -89,7 +155,10 @@ export default function DesignerView({
               onConnect={onConnect}
               onSelectionChange={handleSelectionChange}
               isValidConnection={isValidConnection}
-              fitView
+              onInit={setReactFlowInstance}
+              defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+              minZoom={0.3}
+              maxZoom={1.5}
             >
               <Background gap={24} color="#d6e3e6" />
               <Controls />
@@ -173,6 +242,6 @@ export default function DesignerView({
           ))}
         </div>
       </section>
-    </>
+    </div>
   );
 }

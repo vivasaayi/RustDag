@@ -19,6 +19,50 @@
       },
       "propertiesSchema": {
         "type": "object",
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "name",
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        },
         "properties": {
           "name": {
             "type": "string",
@@ -107,6 +151,50 @@
       },
       "propertiesSchema": {
         "type": "object",
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "result",
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        },
         "properties": {
           "result": {
             "type": "string",
@@ -206,6 +294,58 @@
       },
       "propertiesSchema": {
         "type": "object",
+        "ui": {
+          "groups": [
+            {
+              "id": "logic",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "condition",
+                "maxIterations"
+              ]
+            },
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        },
         "required": [
           "condition"
         ],
@@ -380,7 +520,58 @@
             "default": ""
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "mode"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       },
       "dynamicPorts": {
         "outputs": true
@@ -483,7 +674,58 @@
             "default": ""
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "expression"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       },
       "dynamicPorts": {
         "outputs": true
@@ -595,7 +837,58 @@
             "default": ""
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "rules"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       },
       "dynamicPorts": {
         "outputs": true
@@ -700,7 +993,59 @@
             "default": ""
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "count",
+                "itemsExpression"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       },
       "dynamicPorts": {
         "outputs": true
@@ -798,7 +1143,58 @@
             "default": ""
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "joinType"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       },
       "dynamicPorts": {
         "inputs": true
@@ -896,7 +1292,58 @@
             "default": ""
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "mode"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       },
       "dynamicPorts": {
         "inputs": true
@@ -997,7 +1444,58 @@
             "default": ""
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "mode"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       },
       "dynamicPorts": {
         "inputs": true
@@ -1104,7 +1602,66 @@
             "default": ""
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "approvers"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "scheduling",
+              "title": "Scheduling",
+              "defaultOpen": false,
+              "fields": [
+                "timeoutMinutes"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       },
       "profiles": [
         "everyday",
@@ -1222,7 +1779,73 @@
             "type": "string"
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "type",
+                "callbackUrl"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets",
+                "webhookSecretRef"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities",
+                "timezone"
+              ]
+            },
+            {
+              "id": "scheduling",
+              "title": "Scheduling",
+              "defaultOpen": false,
+              "fields": [
+                "cron",
+                "dedupeKey",
+                "quietHoursStart",
+                "quietHoursEnd",
+                "eventName"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       },
       "profiles": [
         "everyday",
@@ -1326,6 +1949,58 @@
             "type": "string",
             "default": ""
           }
+        },
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "workflowId",
+                "waitForCompletion"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
         }
       },
       "profiles": [
@@ -1474,6 +2149,71 @@
             "type": "string",
             "description": "secret://smtp_default_password"
           }
+        },
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "to",
+                "subject",
+                "body",
+                "smtpHost",
+                "smtpPort",
+                "from",
+                "useTls",
+                "cc",
+                "bcc",
+                "attachments",
+                "replyTo",
+                "templateId"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "username",
+                "password",
+                "requiredSecrets",
+                "secretRef"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
         }
       },
       "profiles": [
@@ -1577,7 +2317,59 @@
         },
         "required": [
           "message"
-        ]
+        ],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "userId",
+                "message"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       },
       "profiles": [
         "everyday",
@@ -1670,7 +2462,58 @@
             "default": ""
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "template"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       },
       "profiles": [
         "everyday",
@@ -1775,7 +2618,60 @@
             "default": ""
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "agentId",
+                "model",
+                "temperature"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       },
       "profiles": [
         "everyday",
@@ -1887,6 +2783,59 @@
             "type": "string",
             "default": ""
           }
+        },
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "command",
+                "args",
+                "timeoutSeconds"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
         }
       },
       "profiles": [
@@ -1989,7 +2938,60 @@
             "default": ""
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "prompt",
+                "model",
+                "temperature"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       },
       "profiles": [
         "everyday",
@@ -2091,7 +3093,66 @@
             "default": ""
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "approvers"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "scheduling",
+              "title": "Scheduling",
+              "defaultOpen": false,
+              "fields": [
+                "timeoutMinutes"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       },
       "profiles": [
         "everyday",
@@ -2240,6 +3301,67 @@
             "type": "boolean",
             "default": true
           }
+        },
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "method",
+                "url",
+                "headers",
+                "query",
+                "body",
+                "successCodes",
+                "responsePath",
+                "followRedirects"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "auth",
+                "requiredSecrets",
+                "authType",
+                "secretRef"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
         }
       },
       "profiles": [
@@ -2339,7 +3461,59 @@
             "default": ""
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "path",
+                "delimiter"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       },
       "profiles": [
         "advanced"
@@ -2438,7 +3612,59 @@
             "default": ""
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "path",
+                "delimiter"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       },
       "profiles": [
         "advanced"
@@ -2541,7 +3767,59 @@
             "default": ""
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "path",
+                "format"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       },
       "profiles": [
         "advanced"
@@ -2636,7 +3914,58 @@
             "default": ""
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "path"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       },
       "profiles": [
         "advanced"
@@ -2734,7 +4063,59 @@
             "default": ""
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "templatePath",
+                "outputPath"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       },
       "profiles": [
         "advanced"
@@ -2832,7 +4213,59 @@
             "default": ""
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "templatePath",
+                "outputPath"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       },
       "profiles": [
         "advanced"
@@ -2934,7 +4367,60 @@
             "description": "secret://mysql_prod"
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "query"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "connection",
+                "requiredSecrets",
+                "dbSecretRef"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       },
       "profiles": [
         "advanced"
@@ -3039,7 +4525,60 @@
             "description": "secret://postgres_prod"
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "query"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "connection",
+                "requiredSecrets",
+                "dbSecretRef"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       },
       "profiles": [
         "advanced"
@@ -3156,7 +4695,64 @@
             "description": "secret://mongo_prod"
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "collection",
+                "operation",
+                "filter",
+                "database",
+                "document"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "connection",
+                "requiredSecrets",
+                "dbSecretRef"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       },
       "profiles": [
         "advanced"
@@ -3273,7 +4869,63 @@
             "description": "secret://aws_prod"
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "region",
+                "stream",
+                "action",
+                "data",
+                "partitionKey"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets",
+                "awsSecretRef"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       },
       "profiles": [
         "advanced"
@@ -3396,7 +5048,64 @@
             "description": "secret://aws_prod"
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "region",
+                "queueUrl",
+                "action",
+                "body",
+                "receiptHandle",
+                "max"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets",
+                "awsSecretRef"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       },
       "profiles": [
         "advanced"
@@ -3519,7 +5228,64 @@
             "description": "secret://aws_prod"
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "region",
+                "bucket",
+                "action",
+                "key",
+                "body",
+                "prefix"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets",
+                "awsSecretRef"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       },
       "profiles": [
         "advanced"
@@ -3643,7 +5409,64 @@
             "default": false
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "namespace",
+                "kind",
+                "name",
+                "operation",
+                "manifest"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets",
+                "kubeSecretRef"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities",
+                "dryRunServer"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       },
       "profiles": [
         "advanced"
@@ -3766,7 +5589,65 @@
             "description": "secret://aws_prod"
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "region",
+                "query",
+                "action",
+                "namespace",
+                "metricName",
+                "value"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets",
+                "awsSecretRef"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "logGroup",
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       },
       "profiles": [
         "advanced"
@@ -3872,7 +5753,59 @@
             "default": ""
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "language",
+                "code"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       },
       "profiles": [
         "advanced"
@@ -3983,6 +5916,66 @@
             "type": "string",
             "default": ""
           }
+        },
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "question",
+                "options"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "scheduling",
+              "title": "Scheduling",
+              "defaultOpen": false,
+              "fields": [
+                "timeoutMinutes"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
         }
       }
     },
@@ -4090,6 +6083,59 @@
             "type": "string",
             "default": ""
           }
+        },
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "title",
+                "message",
+                "at"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
         }
       }
     },
@@ -4210,6 +6256,68 @@
             "type": "string",
             "default": ""
           }
+        },
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "provider",
+                "title",
+                "attendees"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "scheduling",
+              "title": "Scheduling",
+              "defaultOpen": false,
+              "fields": [
+                "startTime",
+                "endTime"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
         }
       }
     },
@@ -4314,6 +6422,58 @@
             "type": "string",
             "default": ""
           }
+        },
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "toLanguage",
+                "fromLanguage"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
         }
       }
     },
@@ -4422,6 +6582,58 @@
             "type": "string",
             "default": ""
           }
+        },
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "location",
+                "units"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
         }
       }
     },
@@ -4557,6 +6769,65 @@
             "type": "string",
             "description": "secret://home_assistant_token"
           }
+        },
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "platform",
+                "deviceId",
+                "action",
+                "value",
+                "maxPowerPercent",
+                "confirmBeforeExecute"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets",
+                "deviceSecretRef"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "requirePresenceCheck",
+                "dryRun",
+                "requiredCapabilities",
+                "zone"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
         }
       },
       "requiredCapabilities": [
@@ -4671,6 +6942,67 @@
             "type": "boolean",
             "default": false
           }
+        },
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "sceneId",
+                "confirmBeforeExecute"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities",
+                "requirePresenceCheck"
+              ]
+            },
+            {
+              "id": "scheduling",
+              "title": "Scheduling",
+              "defaultOpen": false,
+              "fields": [
+                "delaySeconds"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
         }
       },
       "requiredCapabilities": [
@@ -4783,7 +7115,60 @@
             "default": 0.7
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "cameraId",
+                "timeoutSeconds",
+                "minConfidence"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       },
       "requiredCapabilities": [
         "camera_sensor"
@@ -4918,6 +7303,63 @@
             "type": "string",
             "description": "secret://robot_access_token"
           }
+        },
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "robotId",
+                "command",
+                "payload"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets",
+                "robotSecretRef"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities",
+                "safeSpeed",
+                "allowedZones",
+                "emergencyStopTopic"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
         }
       },
       "requiredCapabilities": [
@@ -5040,6 +7482,61 @@
           "allowedZones": {
             "type": "string"
           }
+        },
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "destination",
+                "speed",
+                "maxDistanceMeters"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities",
+                "safeSpeed",
+                "allowedZones"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
         }
       },
       "requiredCapabilities": [
@@ -5153,6 +7650,60 @@
             "type": "string",
             "default": "en-US"
           }
+        },
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "text",
+                "voice",
+                "volume",
+                "language"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
         }
       },
       "requiredCapabilities": [
@@ -5263,7 +7814,59 @@
             "default": ""
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "lowThreshold",
+                "criticalThreshold"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       }
     },
     {
@@ -5364,7 +7967,59 @@
             "default": ""
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "strictMode"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "policy",
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       }
     },
     {
@@ -5475,7 +8130,59 @@
             "default": ""
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "source"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "zone",
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       }
     },
     {
@@ -5576,7 +8283,59 @@
             "default": ""
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "requiredRole",
+                "reason"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       }
     },
     {
@@ -5668,7 +8427,58 @@
             "default": ""
           }
         },
-        "required": []
+        "required": [],
+        "ui": {
+          "groups": [
+            {
+              "id": "ops",
+              "title": "Operations",
+              "defaultOpen": true,
+              "fields": [
+                "enabled",
+                "executionMode",
+                "timeoutMs",
+                "retryMax",
+                "retryBackoffMs",
+                "onError"
+              ]
+            },
+            {
+              "id": "config",
+              "title": "Stage Config",
+              "defaultOpen": true,
+              "fields": [
+                "reason"
+              ]
+            },
+            {
+              "id": "auth",
+              "title": "Auth & Secrets",
+              "defaultOpen": false,
+              "fields": [
+                "requiredSecrets"
+              ]
+            },
+            {
+              "id": "safety",
+              "title": "Safety",
+              "defaultOpen": true,
+              "fields": [
+                "dryRun",
+                "requiredCapabilities"
+              ]
+            },
+            {
+              "id": "obs",
+              "title": "Observability",
+              "defaultOpen": false,
+              "fields": [
+                "auditTag",
+                "notes"
+              ]
+            }
+          ]
+        }
       }
     }
   ]
