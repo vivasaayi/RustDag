@@ -454,6 +454,10 @@ body {
   box-shadow: var(--shadow);
 }
 
+.inline-error-panel {
+  padding: 10px 14px;
+}
+
 .run-header {
   display: flex;
   justify-content: space-between;

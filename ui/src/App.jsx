@@ -1,17 +1,13 @@
 import React, { useMemo, useCallback, useRef, useState, useEffect } from 'react';
-import ReactFlow, {
-  Background,
-  Controls,
-  MiniMap,
-  addEdge,
-  useEdgesState,
-  useNodesState,
-} from 'reactflow';
+import { addEdge, useEdgesState, useNodesState } from 'reactflow';
 import 'reactflow/dist/style.css';
 import stageLibraryData from './stages/stageLibrary.json';
 import templateLibraryData from './templates/workflowTemplates.json';
-import StageNode from './components/StageNode.jsx';
-import Inspector from './components/Inspector.jsx';
+import AppHeader from './components/layout/AppHeader.jsx';
+import ExecutionsView from './components/views/ExecutionsView.jsx';
+import FlowsView from './components/views/FlowsView.jsx';
+import DesignerView from './components/views/DesignerView.jsx';
+import SecretsModal from './components/modals/SecretsModal.jsx';
 import {
   deleteSecret,
   executeWorkflow,
@@ -24,8 +20,6 @@ import {
   setSecret,
   updateTemplateConfig as saveTemplateConfig,
 } from './nativeBackend.js';
-
-const nodeTypes = { stage: StageNode };
 
 function buildDefaults(stage) {
   const schema = stage?.propertiesSchema?.properties || {};
@@ -385,7 +379,6 @@ export default function App() {
   const [flowSort, setFlowSort] = useState('name_asc');
   const [rowMenuFlowId, setRowMenuFlowId] = useState('');
   const [designerFlowId, setDesignerFlowId] = useState('');
-  const [designerFlowName, setDesignerFlowName] = useState('');
   const [designerFlowIsPredefined, setDesignerFlowIsPredefined] = useState(false);
   const [runLoading, setRunLoading] = useState(false);
   const [runStatus, setRunStatus] = useState('idle');
@@ -775,7 +768,6 @@ export default function App() {
     const isPredefined = predefinedFlowIds.has(flow.id);
     loadWorkflowToCanvas(flow.workflow);
     setDesignerFlowId(flow.id);
-    setDesignerFlowName(flow.name || flow.id);
     setDesignerFlowIsPredefined(isPredefined);
     setActiveView('designer');
   }, [loadWorkflowToCanvas, predefinedFlowIds]);
@@ -871,7 +863,6 @@ export default function App() {
         workflow,
       };
       await upsertFlow(definition);
-      setDesignerFlowName(definition.name);
     } catch (error) {
       setRunError(error?.message || 'Failed to save flow');
     }
@@ -1002,6 +993,9 @@ export default function App() {
       setAutoRunMessage(source === 'template' ? '' : `Scheduled run completed: ${template.name}`);
       await refreshTemplateConfigs();
       await refreshExecutions();
+      if (source === 'table') {
+        setActiveView('executions');
+      }
       return { executed: true, result };
     } catch (error) {
       setRunError(error?.message || 'Template run failed');
@@ -1034,428 +1028,115 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <header className="app-header">
-        <div className="brand">
-          <div className="brand-mark">WF</div>
-          <div>
-            <div className="brand-title">FlowForge</div>
-            <div className="brand-subtitle">Workflow Designer</div>
-          </div>
-        </div>
-        <div className="header-menu">
-          <button
-            className={`menu-item ${activeView === 'executions' ? 'active' : ''}`}
-            onClick={() => setActiveView('executions')}
-          >
-            Executions
-          </button>
-          <button
-            className={`menu-item ${activeView === 'flows' ? 'active' : ''}`}
-            onClick={() => setActiveView('flows')}
-          >
-            Flows
-          </button>
-          {activeView === 'designer' && (
-            <button className="menu-item active">Designer</button>
-          )}
-        </div>
-        <div className="header-actions">
-          <select
-            className="input mode-select"
-            value={profileMode}
-            onChange={(event) => setProfileMode(event.target.value)}
-          >
-            <option value="everyday">Everyday</option>
-            <option value="devices">Home Devices</option>
-            <option value="robots">Robots + Devices</option>
-            <option value="advanced">Advanced Builder</option>
-          </select>
-          {activeView === 'executions' && <button className="btn ghost" onClick={refreshExecutions}>Refresh</button>}
-          {activeView === 'flows' && <button className="btn primary" onClick={createNewFlow}>New Flow</button>}
-          {activeView === 'flows' && (
-            <button className="btn ghost" onClick={copySelectedFlow} disabled={!selectedFlowRow}>
-              Copy Flow
-            </button>
-          )}
-          {activeView === 'flows' && <button className="btn ghost" onClick={() => templateFileInputRef.current?.click()}>Import Flows</button>}
-          {activeView === 'flows' && <button className="btn ghost" onClick={handleExportTemplates}>Export Flows</button>}
-          {activeView === 'designer' && <button className="btn ghost" onClick={() => setActiveView('flows')}>Back to Flows</button>}
-          {activeView === 'designer' && (
-            <button className="btn ghost" onClick={saveDesignerFlow} disabled={!designerFlowId}>
-              {designerFlowIsPredefined ? 'Save As Copy' : 'Save Flow'}
-            </button>
-          )}
-          {activeView === 'designer' && <button className="btn ghost" onClick={() => workflowFileInputRef.current?.click()}>Import</button>}
-          {activeView === 'designer' && <button className="btn ghost" onClick={handleExport}>Save</button>}
-          {activeView === 'designer' && <button className="btn primary" onClick={runWorkflow} disabled={runLoading}>Run</button>}
-          <button className="btn ghost" onClick={openSecrets}>Secrets</button>
-        </div>
-        <input
-          ref={workflowFileInputRef}
-          type="file"
-          accept="application/json"
-          hidden
-          onChange={handleImportWorkflow}
-        />
-        <input
-          ref={templateFileInputRef}
-          type="file"
-          accept="application/json"
-          hidden
-          onChange={handleImportTemplates}
-        />
-      </header>
+      <AppHeader
+        activeView={activeView}
+        setActiveView={setActiveView}
+        profileMode={profileMode}
+        setProfileMode={setProfileMode}
+        onRefreshExecutions={refreshExecutions}
+        onCreateFlow={createNewFlow}
+        onCopyFlow={copySelectedFlow}
+        hasSelectedFlow={Boolean(selectedFlowRow)}
+        onExportFlows={handleExportTemplates}
+        onBackToFlows={() => setActiveView('flows')}
+        onSaveFlow={saveDesignerFlow}
+        canSaveFlow={Boolean(designerFlowId)}
+        saveIsCopy={designerFlowIsPredefined}
+        onExportWorkflow={handleExport}
+        onRunWorkflow={runWorkflow}
+        runLoading={runLoading}
+        onOpenSecrets={openSecrets}
+        workflowFileInputRef={workflowFileInputRef}
+        templateFileInputRef={templateFileInputRef}
+        onImportWorkflow={handleImportWorkflow}
+        onImportTemplates={handleImportTemplates}
+      />
+
+      {runError && activeView !== 'designer' && (
+        <section className="run-panel inline-error-panel">
+          <div className="run-log error">{runError}</div>
+        </section>
+      )}
 
       {activeView === 'executions' && (
-        <section className="panel page-panel">
-          <div className="page-header">
-            <div>
-              <div className="page-title">Execution Monitor</div>
-              <div className="page-subtitle">Primary daily view for triggers, runs, and outcomes.</div>
-            </div>
-            <div className="status-cluster">
-              <span className="risk-pill risk-low">completed: {executionStatusSummary.completed}</span>
-              <span className="risk-pill risk-medium">waiting: {executionStatusSummary.waiting}</span>
-              <span className="risk-pill risk-high">other: {executionStatusSummary.failed}</span>
-            </div>
-          </div>
-          {executionRows.length === 0 && (
-            <div className="run-log">No execution records yet. Run a workflow or template to populate this table.</div>
-          )}
-          {executionRows.length > 0 && (
-            <div className="table-wrap">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Time</th>
-                    <th>Source</th>
-                    <th>Instance</th>
-                    <th>Status</th>
-                    <th>Events</th>
-                    <th>Pending</th>
-                    <th>Outputs</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {executionRows.map((row) => (
-                    <tr key={row.id}>
-                      <td>{formatDateTime(row.timestamp_ms)}</td>
-                      <td>{row.source}</td>
-                      <td>{row.instance_id}</td>
-                      <td>
-                        <span className={`status-pill status-${row.status || 'unknown'}`}>{row.status || 'unknown'}</span>
-                      </td>
-                      <td>{row.event_count}</td>
-                      <td>{row.pending_count}</td>
-                      <td>{Array.isArray(row.output_keys) && row.output_keys.length > 0 ? row.output_keys.join(', ') : '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
+        <ExecutionsView
+          executionStatusSummary={executionStatusSummary}
+          executionRows={executionRows}
+          formatDateTime={formatDateTime}
+        />
       )}
 
       {activeView === 'flows' && (
-        <section className="panel page-panel">
-          <div className="page-header">
-            <div>
-              <div className="page-title">Flow Library</div>
-              <div className="page-subtitle">Predefined flows are read-only. Copy them to customize.</div>
-            </div>
-          </div>
-          <div className="flow-toolbar">
-            <input
-              className="input flow-search"
-              placeholder="Search flows"
-              value={flowQuery}
-              onChange={(event) => setFlowQuery(event.target.value)}
-            />
-            <select className="input table-input" value={flowTypeFilter} onChange={(event) => setFlowTypeFilter(event.target.value)}>
-              <option value="all">all types</option>
-              <option value="predefined">predefined</option>
-              <option value="custom">custom</option>
-            </select>
-            <select className="input table-input" value={flowStateFilter} onChange={(event) => setFlowStateFilter(event.target.value)}>
-              <option value="all">all states</option>
-              <option value="enabled">enabled</option>
-              <option value="disabled">disabled</option>
-            </select>
-            <select className="input table-input" value={flowSort} onChange={(event) => setFlowSort(event.target.value)}>
-              <option value="name_asc">name a-z</option>
-              <option value="name_desc">name z-a</option>
-              <option value="last_run_desc">last run latest</option>
-              <option value="last_run_asc">last run oldest</option>
-            </select>
-          </div>
-          {flowRows.length === 0 && (
-            <div className="run-log">No flows match this filter. Try a different filter or create a new flow.</div>
-          )}
-          {flowRows.length > 0 && (
-            <div className="table-wrap">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Flow</th>
-                    <th>Type</th>
-                    <th>Enabled</th>
-                    <th>Auto</th>
-                    <th>Schedule</th>
-                    <th>Device</th>
-                    <th>Last Run</th>
-                    <th>Status</th>
-                    <th>Menu</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {flowRows.map((flow) => (
-                    <tr
-                      key={flow.id}
-                      className={selectedFlowId === flow.id ? 'is-selected' : ''}
-                      onClick={() => {
-                        setSelectedFlowId(flow.id);
-                        setRowMenuFlowId('');
-                      }}
-                    >
-                      <td>
-                        <div className="table-title">{flow.name}</div>
-                        <div className="table-subtitle">{flow.description || flow.id}</div>
-                      </td>
-                      <td>
-                        <span className={`status-pill ${flow.isPredefined ? 'status-waiting' : 'status-completed'}`}>
-                          {flow.isPredefined ? 'predefined' : 'custom'}
-                        </span>
-                      </td>
-                      <td>{flow.config.enabled ? 'yes' : 'no'}</td>
-                      <td>{flow.config.autoRun ? 'yes' : 'no'}</td>
-                      <td>{flow.config.schedule || 'manual'}</td>
-                      <td>{flow.config.device || 'local'}</td>
-                      <td>{formatDateTime(flow.config.lastRunAt)}</td>
-                      <td>
-                        <span className={`status-pill status-${flow.config.lastStatus || 'idle'}`}>{flow.config.lastStatus || 'idle'}</span>
-                      </td>
-                      <td className="menu-cell">
-                        <button
-                          className="btn ghost menu-trigger"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setSelectedFlowId(flow.id);
-                            setRowMenuFlowId((prev) => (prev === flow.id ? '' : flow.id));
-                          }}
-                        >
-                          Actions
-                        </button>
-                        {rowMenuFlowId === flow.id && (
-                          <div className="row-menu" onClick={(event) => event.stopPropagation()}>
-                            <button className="row-menu-item" onClick={() => { openFlowInDesigner(flow); setRowMenuFlowId(''); }}>Open in Designer</button>
-                            <button className="row-menu-item" onClick={async () => { await runTemplateNow(flow, 'table'); setRowMenuFlowId(''); }}>Run Now</button>
-                            <button className="row-menu-item" onClick={async () => { await updateTemplateConfig(flow.id, { enabled: !flow.config.enabled }); setRowMenuFlowId(''); }}>
-                              {flow.config.enabled ? 'Disable' : 'Enable'}
-                            </button>
-                            <button className="row-menu-item" onClick={async () => { await updateTemplateConfig(flow.id, { autoRun: !flow.config.autoRun }); setRowMenuFlowId(''); }}>
-                              {flow.config.autoRun ? 'Auto-run: off' : 'Auto-run: on'}
-                            </button>
-                            <button className="row-menu-item" onClick={async () => { await updateTemplateConfig(flow.id, { schedule: 'manual' }); setRowMenuFlowId(''); }}>Schedule: manual</button>
-                            <button className="row-menu-item" onClick={async () => { await updateTemplateConfig(flow.id, { schedule: 'hourly' }); setRowMenuFlowId(''); }}>Schedule: hourly</button>
-                            <button className="row-menu-item" onClick={async () => { await updateTemplateConfig(flow.id, { schedule: 'every_15m' }); setRowMenuFlowId(''); }}>Schedule: every 15m</button>
-                            <button className="row-menu-item" onClick={async () => { await updateTemplateConfig(flow.id, { schedule: 'daily_9am' }); setRowMenuFlowId(''); }}>Schedule: daily 9am</button>
-                            <button className="row-menu-item" onClick={async () => { await copyFlow(flow); setRowMenuFlowId(''); }}>Copy Flow</button>
-                            <button className="row-menu-item" onClick={() => { exportSingleFlow(flow); setRowMenuFlowId(''); }}>Export Flow</button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
+        <FlowsView
+          flowQuery={flowQuery}
+          setFlowQuery={setFlowQuery}
+          flowTypeFilter={flowTypeFilter}
+          setFlowTypeFilter={setFlowTypeFilter}
+          flowStateFilter={flowStateFilter}
+          setFlowStateFilter={setFlowStateFilter}
+          flowSort={flowSort}
+          setFlowSort={setFlowSort}
+          flowRows={flowRows}
+          selectedFlowId={selectedFlowId}
+          setSelectedFlowId={setSelectedFlowId}
+          rowMenuFlowId={rowMenuFlowId}
+          setRowMenuFlowId={setRowMenuFlowId}
+          openFlowInDesigner={openFlowInDesigner}
+          runTemplateNow={runTemplateNow}
+          updateTemplateConfig={updateTemplateConfig}
+          copyFlow={copyFlow}
+          exportSingleFlow={exportSingleFlow}
+          formatDateTime={formatDateTime}
+        />
       )}
 
       {activeView === 'designer' && (
-        <>
-          <div className="designer">
-            <aside className="panel palette">
-              <div className="panel-title">Palette</div>
-              <input
-                className="search"
-                placeholder="Search stages"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-              {Object.entries(groupedStages).map(([category, stages]) => (
-                <div key={category}>
-                  <div className="section-label">{category}</div>
-                  <div className="palette-grid">
-                    {stages.map((stage) => (
-                      <button
-                        key={stage.id}
-                        type="button"
-                        className="stage-card"
-                        onClick={() => addStage(stage)}
-                      >
-                        <div className="stage-icon">{stage.icon || 'ST'}</div>
-                        <div>
-                          <div className="stage-title">{stage.label}</div>
-                          <div className="stage-subtitle">{stage.description}</div>
-                          <div className={`risk-pill risk-${stage.riskLevel || 'medium'}`}>
-                            risk: {stage.riskLevel || 'medium'}
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </aside>
-
-            <main className="panel canvas">
-              <div className="canvas-toolbar">
-                <button className="btn ghost" onClick={runValidateOnly}>Validate</button>
-                <button className="btn ghost">Auto-Layout</button>
-                <button className="btn ghost">Align</button>
-                <button className="btn ghost">Zoom 100%</button>
-                <div className="spacer" />
-                <button className="btn ghost">Undo</button>
-                <button className="btn ghost">Redo</button>
-              </div>
-
-              <div className="canvas-grid">
-                <ReactFlow
-                  nodes={nodes}
-                  edges={edges}
-                  nodeTypes={nodeTypes}
-                  onNodesChange={onNodesChange}
-                  onEdgesChange={onEdgesChange}
-                  onConnect={onConnect}
-                  onSelectionChange={handleSelectionChange}
-                  isValidConnection={isValidConnection}
-                  fitView
-                >
-                  <Background gap={24} color="#d6e3e6" />
-                  <Controls />
-                  <MiniMap pannable zoomable />
-                </ReactFlow>
-              </div>
-            </main>
-
-            <aside className="panel inspector">
-              <div className="panel-title">Inspector</div>
-              <Inspector
-                node={selectedNode}
-                onUpdateProperties={updateSelectedNodeProperties}
-                onUpdatePorts={updateSelectedNodePorts}
-                onRemovePort={removePort}
-              />
-            </aside>
-          </div>
-
-          <section className="run-panel">
-            <div className="run-header">
-              <div>
-                <div className="run-title">Run Panel</div>
-                <div className="run-subtitle">status: {runStatus}{instanceId ? ` | instance: ${instanceId}` : ''}</div>
-              </div>
-              <div className="run-actions">
-                <button className="btn ghost" onClick={runValidateOnly}>Validate</button>
-                <button className="btn primary" onClick={runWorkflow} disabled={runLoading}>Run</button>
-              </div>
-            </div>
-
-            {autoRunMessage && <div className="run-log ok">{autoRunMessage}</div>}
-            {runError && <div className="run-log error">{runError}</div>}
-
-            <div className="pending-panel">
-              <div className="panel-title">Validation</div>
-              <div className="run-subtitle">errors: {validationSummary.errors} | warnings: {validationSummary.warnings}</div>
-              {validationIssues.length === 0 && <div className="run-log ok">No validation issues.</div>}
-              {validationIssues.map((issue, idx) => (
-                <div key={`v-${idx}`} className={`run-log ${issue.severity === 'error' ? 'error' : 'warn'}`}>
-                  [{issue.severity}] {issue.message}{issue.nodeId ? ` (node: ${issue.nodeId})` : ''}
-                </div>
-              ))}
-            </div>
-
-            <div className="run-body">
-              {runEvents.length === 0 && <div className="run-log">No run events yet.</div>}
-              {runEvents.map((event, idx) => (
-                <div key={`${event.node_id}-${idx}`} className={`run-log ${event.status === 'ok' || event.status === 'resumed' ? 'ok' : ''}`}>
-                  {event.stage_id} ({event.node_id}) {'->'} {event.status}{event.detail ? `: ${event.detail}` : ''}
-                </div>
-              ))}
-            </div>
-
-            <div className="pending-panel">
-              <div className="panel-title">Approvals and Triggers Inbox</div>
-              {pendingItems.length === 0 && <div className="run-log">No pending approvals or triggers.</div>}
-              {pendingItems.map((item) => (
-                <div key={item.node_id} className="pending-item">
-                  <div className="pending-meta">
-                    <strong>{item.stage_id}</strong> ({item.node_id})
-                    <span className="pending-action">action: {item.action}</span>
-                  </div>
-                  {(item.action === 'approval' || item.action === 'pause') && (
-                    <select
-                      className="input small"
-                      value={decisionByNode[item.node_id] || 'approved'}
-                      onChange={(event) =>
-                        setDecisionByNode((prev) => ({ ...prev, [item.node_id]: event.target.value }))
-                      }
-                    >
-                      <option value="approved">approved</option>
-                      <option value="rejected">rejected</option>
-                      <option value="timeout">timeout</option>
-                    </select>
-                  )}
-                  <button className="btn ghost" onClick={() => resumePending(item)} disabled={runLoading || !instanceId}>
-                    Resume
-                  </button>
-                </div>
-              ))}
-            </div>
-          </section>
-        </>
+        <DesignerView
+          search={search}
+          setSearch={setSearch}
+          groupedStages={groupedStages}
+          addStage={addStage}
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          handleSelectionChange={handleSelectionChange}
+          isValidConnection={isValidConnection}
+          selectedNode={selectedNode}
+          updateSelectedNodeProperties={updateSelectedNodeProperties}
+          updateSelectedNodePorts={updateSelectedNodePorts}
+          removePort={removePort}
+          runValidateOnly={runValidateOnly}
+          runWorkflow={runWorkflow}
+          runLoading={runLoading}
+          runStatus={runStatus}
+          instanceId={instanceId}
+          autoRunMessage={autoRunMessage}
+          runError={runError}
+          validationSummary={validationSummary}
+          validationIssues={validationIssues}
+          runEvents={runEvents}
+          pendingItems={pendingItems}
+          decisionByNode={decisionByNode}
+          setDecisionByNode={setDecisionByNode}
+          resumePending={resumePending}
+        />
       )}
 
-      {showSecrets && (
-        <div className="modal-backdrop" onClick={() => setShowSecrets(false)}>
-          <div className="modal-card" onClick={(event) => event.stopPropagation()}>
-            <div className="panel-title">Secrets Manager</div>
-            <div className="run-log">Use values in stage properties as <code>secret://name</code>.</div>
-            {secretsError && <div className="run-log warn">{secretsError}</div>}
-            <div className="secret-form">
-              <input
-                className="input"
-                placeholder="name"
-                value={secretNameInput}
-                onChange={(event) => setSecretNameInput(event.target.value)}
-              />
-              <input
-                className="input"
-                placeholder="value"
-                value={secretValueInput}
-                onChange={(event) => setSecretValueInput(event.target.value)}
-              />
-              <button className="btn primary" onClick={saveSecret}>Save Secret</button>
-            </div>
-            <div className="secret-list">
-              {secretNames.length === 0 && <div className="run-log">No secrets saved.</div>}
-              {secretNames.map((name) => (
-                <div key={name} className="pending-item">
-                  <span>{name}</span>
-                  <button className="btn ghost" onClick={() => removeSecret(name)}>Delete</button>
-                </div>
-              ))}
-            </div>
-            <div className="run-actions">
-              <button className="btn ghost" onClick={refreshSecrets}>Refresh</button>
-              <button className="btn ghost" onClick={() => setShowSecrets(false)}>Close</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <SecretsModal
+        show={showSecrets}
+        onClose={() => setShowSecrets(false)}
+        secretsError={secretsError}
+        secretNameInput={secretNameInput}
+        setSecretNameInput={setSecretNameInput}
+        secretValueInput={secretValueInput}
+        setSecretValueInput={setSecretValueInput}
+        onSaveSecret={saveSecret}
+        secretNames={secretNames}
+        onDeleteSecret={removeSecret}
+        onRefreshSecrets={refreshSecrets}
+      />
     </div>
   );
 }

@@ -1,14 +1,16 @@
 use axum::{
+    http::{header, Method},
     extract::{Json, Query, State},
     routing::{get, post},
     Router,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::net::SocketAddr;
+use std::net::{SocketAddr, TcpListener};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::time::{sleep, Duration};
+use tower_http::cors::{Any, CorsLayer};
 
 mod dag;
 mod runner;
@@ -34,6 +36,15 @@ struct AppState {
 pub(crate) static TEST_ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 fn app_router(app_state: AppState) -> Router {
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::OPTIONS,
+        ])
+        .allow_headers([header::CONTENT_TYPE, header::ACCEPT, header::AUTHORIZATION]);
+
     Router::new()
         .route("/execute-graph", post(execute_graph))
         .route("/models/list", get(list_models))
@@ -50,6 +61,7 @@ fn app_router(app_state: AppState) -> Router {
         .route("/templates/config", post(update_template_config))
         .route("/templates/run", post(run_template))
         .route("/executions/list", get(list_executions))
+        .layer(cors)
         .with_state(app_state)
 }
 
@@ -67,10 +79,25 @@ async fn main() {
     let addr = SocketAddr::from(([127, 0, 0, 1], 9091));
     println!("llm-dag http shim listening on {addr}");
 
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await
-        .unwrap();
+    let listener = match TcpListener::bind(addr) {
+        Ok(listener) => listener,
+        Err(error) => {
+            eprintln!("llm-dag failed to bind 127.0.0.1:9091: {error}");
+            return;
+        }
+    };
+
+    let server = match axum::Server::from_tcp(listener) {
+        Ok(server) => server,
+        Err(error) => {
+            eprintln!("llm-dag failed to initialize server: {error}");
+            return;
+        }
+    };
+
+    if let Err(error) = server.serve(app.into_make_service()).await {
+        eprintln!("llm-dag server error: {error}");
+    }
 }
 
 #[derive(Debug, Deserialize)]
