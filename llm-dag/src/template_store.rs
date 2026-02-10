@@ -345,6 +345,51 @@ fn is_daily_nine_due(last_run_at: u64, now_ms: u64) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
+    use tempfile::tempdir;
+
+    fn simple_workflow() -> Workflow {
+        Workflow {
+            version: Some(1),
+            nodes: vec![
+                crate::workflow::StageNode {
+                    id: "s".to_string(),
+                    stage_id: "start".to_string(),
+                    label: None,
+                    properties: Some(json!({})),
+                    ports: Some(crate::workflow::Ports {
+                        inputs: vec![],
+                        outputs: vec![crate::workflow::Port {
+                            id: "out".to_string(),
+                            label: None,
+                            data_type: None,
+                        }],
+                    }),
+                },
+                crate::workflow::StageNode {
+                    id: "e".to_string(),
+                    stage_id: "stop".to_string(),
+                    label: None,
+                    properties: Some(json!({})),
+                    ports: Some(crate::workflow::Ports {
+                        inputs: vec![crate::workflow::Port {
+                            id: "in".to_string(),
+                            label: None,
+                            data_type: None,
+                        }],
+                        outputs: vec![],
+                    }),
+                },
+            ],
+            edges: vec![crate::workflow::Edge {
+                id: "edge".to_string(),
+                source: "s".to_string(),
+                target: "e".to_string(),
+                source_handle: Some("out".to_string()),
+                target_handle: Some("in".to_string()),
+            }],
+        }
+    }
 
     #[test]
     fn schedule_due_every_fifteen_minutes() {
@@ -370,5 +415,63 @@ mod tests {
     fn daily_schedule_not_due_after_same_day_run() {
         let now = now_millis();
         assert!(!is_schedule_due("daily_9am", now, now));
+    }
+
+    #[test]
+    fn sync_and_update_template_config_and_run_state() {
+        let _guard = crate::TEST_ENV_LOCK.lock().unwrap();
+        let temp = tempdir().unwrap();
+        std::env::set_var("HOME", temp.path());
+
+        let defs = vec![TemplateDefinition {
+            id: "tpl1".to_string(),
+            name: "Template 1".to_string(),
+            category: "tests".to_string(),
+            description: "d".to_string(),
+            profiles: vec!["everyday".to_string()],
+            risk_level: "low".to_string(),
+            default_device: "local".to_string(),
+            recommended_schedule: "manual".to_string(),
+            workflow: simple_workflow(),
+        }];
+
+        let synced = sync_templates(&defs).unwrap();
+        assert_eq!(synced.len(), 1);
+        assert_eq!(synced[0].id, "tpl1");
+        assert_eq!(synced[0].enabled, true);
+        assert_eq!(synced[0].auto_run, false);
+
+        let updated = update_template_config(&TemplateConfigPatch {
+            id: "tpl1".to_string(),
+            enabled: Some(false),
+            auto_run: Some(true),
+            schedule: Some("hourly".to_string()),
+            device: Some("robot_unit".to_string()),
+        })
+        .unwrap()
+        .unwrap();
+        assert_eq!(updated.enabled, false);
+        assert_eq!(updated.auto_run, true);
+        assert_eq!(updated.schedule, "hourly");
+        assert_eq!(updated.device, "robot_unit");
+
+        let run_updated = update_template_run(
+            "tpl1",
+            TemplateRunUpdate {
+                last_run_at: 12345,
+                last_status: "completed".to_string(),
+                last_error: None,
+                last_instance_id: Some("abc".to_string()),
+            },
+        )
+        .unwrap()
+        .unwrap();
+        assert_eq!(run_updated.last_run_at, 12345);
+        assert_eq!(run_updated.last_status, "completed");
+        assert_eq!(run_updated.last_instance_id, "abc");
+
+        let listed = list_templates().unwrap();
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0].last_status, "completed");
     }
 }

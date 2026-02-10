@@ -3583,6 +3583,7 @@ dependencies = [
  "dirs 5.0.1",
  "env_logger",
  "futures",
+ "hyper 0.14.32",
  "kube",
  "lettre",
  "llama-cpp-2",
@@ -3594,9 +3595,11 @@ dependencies = [
  "serde_json",
  "shell-words",
  "sqlx",
+ "tempfile",
  "thiserror 1.0.69",
  "tokio",
  "tokio-util",
+ "tower 0.4.13",
  "uuid",
 ]
 

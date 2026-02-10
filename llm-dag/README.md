@@ -36,4 +36,19 @@ Notes about deployment to edge/mobile
 - For iOS, you'll want the Rust library compiled as a static lib and called from Swift or a Capacitor plugin.
 - On macOS and Linux, the crate can be used as a local binary or embedded service.
 
+Secrets and Key Management
+--------------------------
+- Secrets values are encrypted into `~/.llm-dag/secrets.enc.json`.
+- By default, the encryption master key is stored in `~/.llm-dag/secrets.key`.
+- Optional feature: `os-keychain`
+  - On macOS, this stores the master key in the macOS Keychain (`security` command integration).
+  - If an existing `secrets.key` file is found, the key is migrated into Keychain on first use.
+  - On non-macOS platforms, the feature currently falls back to file-based key storage.
+
+Build with keychain support:
+
+```bash
+cargo run -p llm-dag --features os-keychain
+```
+
 If you'd like, I can implement the llama adapter directly (I recommend targeting the `llama-rs` / ggml wrapper you prefer) and add a simple model-run example using a small GGML model.

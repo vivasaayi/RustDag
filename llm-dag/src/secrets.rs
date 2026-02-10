@@ -7,6 +7,11 @@ use std::collections::HashMap;
 use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
+#[cfg(all(feature = "os-keychain", not(target_os = "macos")))]
+use std::sync::Once;
+
+#[cfg(all(feature = "os-keychain", target_os = "macos"))]
+use std::process::Command;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct SecretEntry {
@@ -28,13 +33,24 @@ fn store_path() -> PathBuf {
     app_dir().join("secrets.enc.json")
 }
 
-fn ensure_key() -> Result<Vec<u8>, String> {
+fn read_key_from_file_if_exists() -> Result<Option<Vec<u8>>, String> {
     let path = key_path();
     if path.exists() {
         let raw = fs::read_to_string(path).map_err(|e| e.to_string())?;
-        return B64.decode(raw.trim()).map_err(|e| e.to_string());
+        let key = B64.decode(raw.trim()).map_err(|e| e.to_string())?;
+        return Ok(Some(key));
     }
+    Ok(None)
+}
 
+#[cfg(any(
+    not(feature = "os-keychain"),
+    all(feature = "os-keychain", not(target_os = "macos"))
+))]
+fn ensure_key_from_file() -> Result<Vec<u8>, String> {
+    if let Some(key) = read_key_from_file_if_exists()? {
+        return Ok(key);
+    }
     fs::create_dir_all(app_dir()).map_err(|e| e.to_string())?;
     let mut key = vec![0_u8; 32];
     OsRng.fill_bytes(&mut key);
@@ -46,6 +62,107 @@ fn ensure_key() -> Result<Vec<u8>, String> {
         fs::set_permissions(key_path(), fs::Permissions::from_mode(0o600)).map_err(|e| e.to_string())?;
     }
     Ok(key)
+}
+
+#[cfg(not(feature = "os-keychain"))]
+fn ensure_key() -> Result<Vec<u8>, String> {
+    ensure_key_from_file()
+}
+
+#[cfg(all(feature = "os-keychain", target_os = "macos"))]
+fn keychain_service() -> &'static str {
+    "llm-dag.master-key"
+}
+
+#[cfg(all(feature = "os-keychain", target_os = "macos"))]
+fn keychain_account() -> &'static str {
+    "default"
+}
+
+#[cfg(all(feature = "os-keychain", target_os = "macos"))]
+fn keychain_missing_item(stderr: &str) -> bool {
+    stderr.contains("could not be found")
+        || stderr.contains("specified item could not be found")
+        || stderr.contains("The specified item could not be found")
+}
+
+#[cfg(all(feature = "os-keychain", target_os = "macos"))]
+fn read_key_from_keychain() -> Result<Option<Vec<u8>>, String> {
+    let output = Command::new("security")
+        .args([
+            "find-generic-password",
+            "-a",
+            keychain_account(),
+            "-s",
+            keychain_service(),
+            "-w",
+        ])
+        .output()
+        .map_err(|e| e.to_string())?;
+
+    if output.status.success() {
+        let raw = String::from_utf8_lossy(&output.stdout);
+        let key = B64.decode(raw.trim()).map_err(|e| e.to_string())?;
+        return Ok(Some(key));
+    }
+
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    if keychain_missing_item(&stderr) {
+        return Ok(None);
+    }
+
+    Err(format!("keychain read failed: {stderr}"))
+}
+
+#[cfg(all(feature = "os-keychain", target_os = "macos"))]
+fn write_key_to_keychain(key: &[u8]) -> Result<(), String> {
+    let encoded = B64.encode(key);
+    let output = Command::new("security")
+        .args([
+            "add-generic-password",
+            "-a",
+            keychain_account(),
+            "-s",
+            keychain_service(),
+            "-w",
+            encoded.as_str(),
+            "-U",
+        ])
+        .output()
+        .map_err(|e| e.to_string())?;
+
+    if output.status.success() {
+        return Ok(());
+    }
+
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    Err(format!("keychain write failed: {stderr}"))
+}
+
+#[cfg(all(feature = "os-keychain", target_os = "macos"))]
+fn ensure_key() -> Result<Vec<u8>, String> {
+    if let Some(key) = read_key_from_keychain()? {
+        return Ok(key);
+    }
+
+    if let Some(key) = read_key_from_file_if_exists()? {
+        write_key_to_keychain(&key)?;
+        return Ok(key);
+    }
+
+    let mut key = vec![0_u8; 32];
+    OsRng.fill_bytes(&mut key);
+    write_key_to_keychain(&key)?;
+    Ok(key)
+}
+
+#[cfg(all(feature = "os-keychain", not(target_os = "macos")))]
+fn ensure_key() -> Result<Vec<u8>, String> {
+    static WARN_ONCE: Once = Once::new();
+    WARN_ONCE.call_once(|| {
+        log::warn!("feature 'os-keychain' is enabled but platform keychain integration is only implemented for macOS; using file-based key storage");
+    });
+    ensure_key_from_file()
 }
 
 fn load_store() -> Result<HashMap<String, SecretEntry>, String> {

@@ -29,6 +29,7 @@ email = ["lettre"]
 db = ["sqlx", "mongodb"]
 aws = ["aws-config", "aws-sdk-s3", "aws-sdk-sqs", "aws-sdk-kinesis", "aws-sdk-cloudwatch"]
 k8s = ["kube"]
+os-keychain = []
 
 [dependencies.llama-cpp-2]
 version = "0.1.126"
@@ -74,3 +75,8 @@ optional = true
 version = "0.88"
 optional = true
 features = ["runtime", "derive"]
+
+[dev-dependencies]
+tower = { version = "0.4", features = ["util"] }
+tempfile = "3"
+hyper = "0.14"

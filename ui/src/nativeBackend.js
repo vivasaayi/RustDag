@@ -115,6 +115,11 @@ export async function runTemplate(id) {
   return res.json();
 }
 
+export async function listExecutions(limit = 200) {
+  const res = await fetch(`http://localhost:9091/executions/list?limit=${encodeURIComponent(limit)}`);
+  return res.json();
+}
+
 export default {
   healthcheck,
   executeGraph,
@@ -128,4 +133,5 @@ export default {
   syncTemplates,
   updateTemplateConfig,
   runTemplate,
+  listExecutions,
 };

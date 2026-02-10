@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Json, State},
+    extract::{Json, Query, State},
     routing::{get, post},
     Router,
 };
@@ -19,6 +19,7 @@ mod state_store;
 mod expr;
 mod secrets;
 mod template_store;
+mod execution_store;
 
 use dag::{Dag, DagExecutionResult};
 use models::ModelInfo;
@@ -29,17 +30,11 @@ struct AppState {
     template_lock: Arc<Mutex<()>>,
 }
 
-#[tokio::main]
-async fn main() {
-    env_logger::init();
-    let app_state = AppState {
-        template_lock: Arc::new(Mutex::new(())),
-    };
+#[cfg(test)]
+pub(crate) static TEST_ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
-    tokio::spawn(template_scheduler_loop(app_state.clone()));
-
-    // build router
-    let app = Router::new()
+fn app_router(app_state: AppState) -> Router {
+    Router::new()
         .route("/execute-graph", post(execute_graph))
         .route("/models/list", get(list_models))
         .route("/models/download", post(download_model))
@@ -54,7 +49,20 @@ async fn main() {
         .route("/templates/sync", post(sync_templates))
         .route("/templates/config", post(update_template_config))
         .route("/templates/run", post(run_template))
-        .with_state(app_state);
+        .route("/executions/list", get(list_executions))
+        .with_state(app_state)
+}
+
+#[tokio::main]
+async fn main() {
+    env_logger::init();
+    let app_state = AppState {
+        template_lock: Arc::new(Mutex::new(())),
+    };
+
+    tokio::spawn(template_scheduler_loop(app_state.clone()));
+
+    let app = app_router(app_state);
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 9091));
     println!("llm-dag http shim listening on {addr}");
@@ -100,6 +108,7 @@ async fn execute_workflow(Json(payload): Json<ExecuteWorkflowRequest>) -> Json<E
     } else {
         let _ = state_store::delete_instance(&instance.id);
     }
+    let _ = execution_store::log_result("workflow", &result, None);
     Json(ExecuteWorkflowResponse { result })
 }
 
@@ -140,6 +149,7 @@ async fn resume_workflow(
     } else {
         let _ = state_store::delete_instance(&instance.id);
     }
+    let _ = execution_store::log_result(&format!("resume:{id}"), &result, None);
     Json(ExecuteWorkflowResponse { result })
 }
 
@@ -194,6 +204,11 @@ struct RunTemplateRequest {
     id: String,
 }
 
+#[derive(Debug, Deserialize)]
+struct ListExecutionsQuery {
+    limit: Option<usize>,
+}
+
 async fn list_templates(State(state): State<AppState>) -> Json<serde_json::Value> {
     let _guard = state.template_lock.lock().await;
     match template_store::list_templates() {
@@ -239,6 +254,16 @@ async fn run_template(
     }
 }
 
+async fn list_executions(
+    Query(query): Query<ListExecutionsQuery>,
+) -> Json<serde_json::Value> {
+    let limit = query.limit.unwrap_or(200);
+    match execution_store::list_records(limit) {
+        Ok(items) => Json(serde_json::json!({ "executions": items })),
+        Err(err) => Json(serde_json::json!({ "error": err, "executions": [] })),
+    }
+}
+
 async fn execute_template_by_id(
     state: &AppState,
     template_id: &str,
@@ -269,6 +294,7 @@ async fn execute_template_by_id(
         template_store::update_template_run(template_id, update)?
             .ok_or_else(|| format!("template not found: {template_id}"))?
     };
+    let _ = execution_store::log_result(&format!("template:{template_id}"), &result, None);
 
     Ok((updated, result))
 }
@@ -367,4 +393,180 @@ async fn chat(Json(payload): Json<ChatRequest>) -> Json<ChatResponse> {
     let result = runner::run_llm(&prompt, &std::collections::HashMap::new(), "chat").await;
     let response = result.get("text").and_then(|v| v.as_str()).unwrap_or("No response").to_string();
     Json(ChatResponse { response })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::body::Body;
+    use axum::http::{Method, Request, StatusCode};
+    use hyper::body::to_bytes;
+    use serde_json::{json, Value};
+    use tempfile::tempdir;
+    use tower::util::ServiceExt;
+
+    async fn json_request(app: &Router, method: Method, uri: &str, payload: Value) -> (StatusCode, Value) {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method(method)
+                    .uri(uri)
+                    .header("content-type", "application/json")
+                    .body(Body::from(payload.to_string()))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        let status = response.status();
+        let body_bytes = to_bytes(response.into_body())
+            .await
+            .unwrap();
+        let body_json: Value = serde_json::from_slice(&body_bytes).unwrap_or_else(|_| json!({}));
+        (status, body_json)
+    }
+
+    async fn get_request(app: &Router, uri: &str) -> (StatusCode, Value) {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method(Method::GET)
+                    .uri(uri)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        let status = response.status();
+        let body_bytes = to_bytes(response.into_body())
+            .await
+            .unwrap();
+        let body_json: Value = serde_json::from_slice(&body_bytes).unwrap_or_else(|_| json!({}));
+        (status, body_json)
+    }
+
+    #[tokio::test]
+    async fn templates_sync_config_run_and_list() {
+        let _guard = crate::TEST_ENV_LOCK.lock().unwrap();
+        let temp = tempdir().unwrap();
+        std::env::set_var("HOME", temp.path());
+
+        let state = AppState {
+            template_lock: Arc::new(Mutex::new(())),
+        };
+        let app = app_router(state);
+
+        let template_payload = json!({
+            "templates": [
+                {
+                    "id": "t_simple",
+                    "name": "Simple Template",
+                    "category": "tests",
+                    "description": "simple",
+                    "profiles": ["everyday"],
+                    "riskLevel": "low",
+                    "defaultDevice": "local",
+                    "recommendedSchedule": "manual",
+                    "workflow": {
+                        "version": 1,
+                        "nodes": [
+                            {
+                                "id": "n1",
+                                "stageId": "start",
+                                "label": "Start",
+                                "properties": {},
+                                "ports": { "inputs": [], "outputs": [{ "id": "out" }] }
+                            },
+                            {
+                                "id": "n2",
+                                "stageId": "stop",
+                                "label": "Stop",
+                                "properties": {},
+                                "ports": { "inputs": [{ "id": "in" }], "outputs": [] }
+                            }
+                        ],
+                        "edges": [
+                            {
+                                "id": "e1",
+                                "source": "n1",
+                                "target": "n2",
+                                "sourceHandle": "out",
+                                "targetHandle": "in"
+                            }
+                        ]
+                    }
+                }
+            ]
+        });
+
+        let (sync_status, sync_body) = json_request(&app, Method::POST, "/templates/sync", template_payload).await;
+        assert_eq!(sync_status, StatusCode::OK);
+        assert_eq!(sync_body["status"], "ok");
+
+        let (config_status, config_body) = json_request(
+            &app,
+            Method::POST,
+            "/templates/config",
+            json!({
+                "id": "t_simple",
+                "enabled": true,
+                "autoRun": true,
+                "schedule": "hourly",
+                "device": "local"
+            }),
+        )
+        .await;
+        assert_eq!(config_status, StatusCode::OK);
+        assert_eq!(config_body["status"], "ok");
+        assert_eq!(config_body["template"]["autoRun"], true);
+        assert_eq!(config_body["template"]["schedule"], "hourly");
+
+        let (run_status, run_body) = json_request(
+            &app,
+            Method::POST,
+            "/templates/run",
+            json!({"id": "t_simple"}),
+        )
+        .await;
+        assert_eq!(run_status, StatusCode::OK);
+        assert_eq!(run_body["status"], "ok");
+        assert_eq!(run_body["result"]["status"], "completed");
+        assert!(run_body["template"]["lastRunAt"].as_u64().unwrap_or(0) > 0);
+
+        let (list_status, list_body) = get_request(&app, "/templates/list").await;
+        assert_eq!(list_status, StatusCode::OK);
+        let templates = list_body["templates"].as_array().unwrap();
+        assert_eq!(templates.len(), 1);
+        assert_eq!(templates[0]["id"], "t_simple");
+        assert_eq!(templates[0]["lastStatus"], "completed");
+    }
+
+    #[tokio::test]
+    async fn templates_config_returns_not_found_for_unknown_id() {
+        let _guard = crate::TEST_ENV_LOCK.lock().unwrap();
+        let temp = tempdir().unwrap();
+        std::env::set_var("HOME", temp.path());
+
+        let state = AppState {
+            template_lock: Arc::new(Mutex::new(())),
+        };
+        let app = app_router(state);
+
+        let (status, body) = json_request(
+            &app,
+            Method::POST,
+            "/templates/config",
+            json!({
+                "id": "missing_template",
+                "enabled": true
+            }),
+        )
+        .await;
+
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(body["error"], "not_found");
+    }
 }
