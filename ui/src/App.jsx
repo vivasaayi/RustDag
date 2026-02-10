@@ -309,6 +309,54 @@ function formatDateTime(ts) {
   }
 }
 
+const DEFAULT_CUSTOM_PROFILES = ['everyday', 'devices', 'robots', 'advanced'];
+
+function slugify(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 48) || 'flow';
+}
+
+function uniqueName(base, existingNames) {
+  if (!existingNames.has(base)) return base;
+  let idx = 2;
+  while (existingNames.has(`${base} ${idx}`)) idx += 1;
+  return `${base} ${idx}`;
+}
+
+function starterWorkflow() {
+  return {
+    version: 1,
+    nodes: [
+      {
+        id: 'start_1',
+        stageId: 'start',
+        label: 'Start',
+        properties: {},
+        ports: { inputs: [], outputs: [{ id: 'out' }] },
+      },
+      {
+        id: 'stop_1',
+        stageId: 'stop',
+        label: 'Stop',
+        properties: {},
+        ports: { inputs: [{ id: 'in' }], outputs: [] },
+      },
+    ],
+    edges: [
+      {
+        id: 'edge_1',
+        source: 'start_1',
+        target: 'stop_1',
+        sourceHandle: 'out',
+        targetHandle: 'in',
+      },
+    ],
+  };
+}
+
 export default function App() {
   const stageLibrary = stageLibraryData.stages || [];
   const templateLibrary = templateLibraryData.templates || [];
@@ -330,6 +378,15 @@ export default function App() {
   const [search, setSearch] = useState('');
   const [profileMode, setProfileMode] = useState('everyday');
   const [activeView, setActiveView] = useState('executions');
+  const [selectedFlowId, setSelectedFlowId] = useState('');
+  const [flowQuery, setFlowQuery] = useState('');
+  const [flowTypeFilter, setFlowTypeFilter] = useState('all');
+  const [flowStateFilter, setFlowStateFilter] = useState('all');
+  const [flowSort, setFlowSort] = useState('name_asc');
+  const [rowMenuFlowId, setRowMenuFlowId] = useState('');
+  const [designerFlowId, setDesignerFlowId] = useState('');
+  const [designerFlowName, setDesignerFlowName] = useState('');
+  const [designerFlowIsPredefined, setDesignerFlowIsPredefined] = useState(false);
   const [runLoading, setRunLoading] = useState(false);
   const [runStatus, setRunStatus] = useState('idle');
   const [runEvents, setRunEvents] = useState([]);
@@ -356,6 +413,16 @@ export default function App() {
     if (profileMode === 'robots') return new Set(['everyday', 'devices', 'robots']);
     return new Set(['everyday', 'devices', 'robots', 'advanced']);
   }, [profileMode]);
+
+  const predefinedFlowIds = useMemo(
+    () => new Set((templateLibrary || []).map((item) => item.id)),
+    [templateLibrary]
+  );
+
+  const effectiveTemplateRecords = useMemo(() => {
+    if (templateRecords.length > 0) return templateRecords;
+    return templateLibrary;
+  }, [templateRecords, templateLibrary]);
 
   const handleSelectionChange = useCallback(({ nodes: selected }) => {
     setSelectedNodeId(selected?.[0]?.id || null);
@@ -494,11 +561,14 @@ export default function App() {
       const response = await listTemplates();
       const records = response?.templates || [];
       setTemplateRecords(records);
-      setTemplateConfigs(mergeTemplateConfigsFromBackend(records, templateLibrary));
+      setTemplateConfigs(mergeTemplateConfigsFromBackend(records, templateLibrary.length > 0 ? templateLibrary : records));
+      if (selectedFlowId && !records.some((item) => item.id === selectedFlowId)) {
+        setSelectedFlowId('');
+      }
     } catch (error) {
       setRunError(error?.message || 'Failed to load templates');
     }
-  }, [templateLibrary]);
+  }, [templateLibrary, selectedFlowId]);
 
   const refreshExecutions = useCallback(async () => {
     try {
@@ -533,6 +603,22 @@ export default function App() {
     }, 15000);
     return () => clearInterval(timer);
   }, [activeView, refreshExecutions]);
+
+  useEffect(() => {
+    if (!rowMenuFlowId) return undefined;
+    const close = () => setRowMenuFlowId('');
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') setRowMenuFlowId('');
+    };
+    document.addEventListener('click', close);
+    document.addEventListener('contextmenu', close);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('click', close);
+      document.removeEventListener('contextmenu', close);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [rowMenuFlowId]);
 
   const validateCurrentWorkflow = useCallback(async (workflow) => {
     const secretList = await refreshSecrets();
@@ -669,6 +755,128 @@ export default function App() {
     reader.readAsText(file);
   }, [refreshTemplateConfigs]);
 
+  const upsertFlow = useCallback(async (definition) => {
+    const response = await syncTemplates([definition]);
+    if (response?.error) {
+      throw new Error(response.error);
+    }
+    await refreshTemplateConfigs();
+  }, [refreshTemplateConfigs]);
+
+  const flowMapById = useMemo(() => {
+    const map = {};
+    effectiveTemplateRecords.forEach((item) => {
+      map[item.id] = item;
+    });
+    return map;
+  }, [effectiveTemplateRecords]);
+
+  const openFlowInDesigner = useCallback((flow) => {
+    const isPredefined = predefinedFlowIds.has(flow.id);
+    loadWorkflowToCanvas(flow.workflow);
+    setDesignerFlowId(flow.id);
+    setDesignerFlowName(flow.name || flow.id);
+    setDesignerFlowIsPredefined(isPredefined);
+    setActiveView('designer');
+  }, [loadWorkflowToCanvas, predefinedFlowIds]);
+
+  const createNewFlow = useCallback(async () => {
+    try {
+      const names = new Set(effectiveTemplateRecords.map((item) => item.name));
+      const name = uniqueName('New Flow', names);
+      const id = `custom_${slugify(name)}_${Date.now()}`;
+      const definition = {
+        id,
+        name,
+        category: 'User Flows',
+        description: 'User-defined flow',
+        profiles: DEFAULT_CUSTOM_PROFILES,
+        riskLevel: 'low',
+        defaultDevice: 'local',
+        recommendedSchedule: 'manual',
+        workflow: starterWorkflow(),
+      };
+      await upsertFlow(definition);
+      openFlowInDesigner(definition);
+    } catch (error) {
+      setRunError(error?.message || 'Failed to create new flow');
+    }
+  }, [effectiveTemplateRecords, openFlowInDesigner, upsertFlow]);
+
+  const copyFlow = useCallback(async (flow) => {
+    if (!flow) return;
+    try {
+      const names = new Set(effectiveTemplateRecords.map((item) => item.name));
+      const baseName = `${flow.name || 'Flow'}-copy`;
+      const name = uniqueName(baseName, names);
+      const id = `custom_${slugify(name)}_${Date.now()}`;
+      const definition = {
+        id,
+        name,
+        category: flow.category || 'User Flows',
+        description: flow.description || `Copy of ${flow.name}`,
+        profiles: Array.isArray(flow.profiles) && flow.profiles.length > 0 ? flow.profiles : DEFAULT_CUSTOM_PROFILES,
+        riskLevel: flow.riskLevel || 'low',
+        defaultDevice: flow.defaultDevice || 'local',
+        recommendedSchedule: flow.recommendedSchedule || 'manual',
+        workflow: flow.workflow || starterWorkflow(),
+      };
+      await upsertFlow(definition);
+      openFlowInDesigner(definition);
+    } catch (error) {
+      setRunError(error?.message || 'Failed to copy flow');
+    }
+  }, [effectiveTemplateRecords, openFlowInDesigner, upsertFlow]);
+
+  const copySelectedFlow = useCallback(async () => {
+    const selected = flowMapById[selectedFlowId];
+    if (!selected) return;
+    await copyFlow(selected);
+  }, [flowMapById, selectedFlowId, copyFlow]);
+
+  const exportSingleFlow = useCallback((flow) => {
+    if (!flow) return;
+    downloadJsonFile(`${slugify(flow.name || flow.id)}.json`, {
+      version: 1,
+      templates: [flow],
+    });
+  }, []);
+
+  const saveDesignerFlow = useCallback(async () => {
+    const workflow = serializeGraph(nodes, edges);
+    const source = flowMapById[designerFlowId];
+    if (!source) {
+      setRunError('No active flow selected in designer.');
+      return;
+    }
+
+    try {
+      if (designerFlowIsPredefined) {
+        await copyFlow({
+          ...source,
+          workflow,
+        });
+        return;
+      }
+
+      const definition = {
+        id: source.id,
+        name: source.name,
+        category: source.category || 'User Flows',
+        description: source.description || 'User-defined flow',
+        profiles: Array.isArray(source.profiles) && source.profiles.length > 0 ? source.profiles : DEFAULT_CUSTOM_PROFILES,
+        riskLevel: source.riskLevel || 'low',
+        defaultDevice: source.defaultDevice || 'local',
+        recommendedSchedule: source.recommendedSchedule || 'manual',
+        workflow,
+      };
+      await upsertFlow(definition);
+      setDesignerFlowName(definition.name);
+    } catch (error) {
+      setRunError(error?.message || 'Failed to save flow');
+    }
+  }, [nodes, edges, flowMapById, designerFlowId, designerFlowIsPredefined, copyFlow, upsertFlow]);
+
   const filteredStages = useMemo(() => {
     const byProfile = stageLibrary.filter((stage) => {
       const profiles = stage.profiles || ['advanced'];
@@ -694,20 +902,56 @@ export default function App() {
   }, [filteredStages]);
 
   const visibleTemplateRecords = useMemo(() => {
-    return templateRecords.filter((template) => {
+    return effectiveTemplateRecords.filter((template) => {
       const profiles = template.profiles || ['advanced'];
       return profiles.some((profile) => visibleProfiles.has(profile));
     });
-  }, [templateRecords, visibleProfiles]);
+  }, [effectiveTemplateRecords, visibleProfiles]);
 
-  const groupedTemplateRecords = useMemo(() => {
-    return visibleTemplateRecords.reduce((acc, template) => {
-      const category = template.category || 'Other';
-      if (!acc[category]) acc[category] = [];
-      acc[category].push(template);
-      return acc;
-    }, {});
-  }, [visibleTemplateRecords]);
+  const flowRows = useMemo(() => {
+    const query = flowQuery.trim().toLowerCase();
+    const rows = visibleTemplateRecords
+      .map((template) => {
+        const config = templateConfigs[template.id] || defaultTemplateConfig(template);
+        return {
+          ...template,
+          config,
+          isPredefined: predefinedFlowIds.has(template.id),
+        };
+      })
+      .filter((row) => {
+        if (flowTypeFilter === 'predefined' && !row.isPredefined) return false;
+        if (flowTypeFilter === 'custom' && row.isPredefined) return false;
+        if (flowStateFilter === 'enabled' && !row.config.enabled) return false;
+        if (flowStateFilter === 'disabled' && row.config.enabled) return false;
+        if (!query) return true;
+        const hay = [row.name, row.description, row.id, row.category].map((v) => String(v || '').toLowerCase()).join(' ');
+        return hay.includes(query);
+      });
+
+    rows.sort((a, b) => {
+      if (flowSort === 'last_run_desc') {
+        return (b.config.lastRunAt || 0) - (a.config.lastRunAt || 0);
+      }
+      if (flowSort === 'last_run_asc') {
+        return (a.config.lastRunAt || 0) - (b.config.lastRunAt || 0);
+      }
+      if (flowSort === 'name_desc') {
+        return String(b.name || '').localeCompare(String(a.name || ''));
+      }
+      return String(a.name || '').localeCompare(String(b.name || ''));
+    });
+
+    return rows;
+  }, [
+    visibleTemplateRecords,
+    templateConfigs,
+    predefinedFlowIds,
+    flowTypeFilter,
+    flowStateFilter,
+    flowQuery,
+    flowSort,
+  ]);
 
   const updateTemplateConfig = useCallback(async (templateId, patch) => {
     setTemplateConfigs((prev) => {
@@ -737,11 +981,7 @@ export default function App() {
       setRunError(error?.message || 'Failed to update template config');
       await refreshTemplateConfigs();
     }
-  }, [templateLibrary, refreshTemplateConfigs]);
-
-  const loadTemplate = useCallback((template) => {
-    loadWorkflowToCanvas(template.workflow);
-  }, [loadWorkflowToCanvas]);
+  }, [refreshTemplateConfigs]);
 
   const runTemplateNow = useCallback(async (template, source = 'template') => {
     setRunLoading(true);
@@ -787,10 +1027,10 @@ export default function App() {
     return summary;
   }, [executionRows]);
 
-  const openTemplateInDesigner = useCallback((template) => {
-    loadTemplate(template);
-    setActiveView('designer');
-  }, [loadTemplate]);
+  const selectedFlowRow = useMemo(
+    () => flowRows.find((row) => row.id === selectedFlowId) || null,
+    [flowRows, selectedFlowId]
+  );
 
   return (
     <div className="app-shell">
@@ -815,12 +1055,9 @@ export default function App() {
           >
             Flows
           </button>
-          <button
-            className={`menu-item ${activeView === 'designer' ? 'active' : ''}`}
-            onClick={() => setActiveView('designer')}
-          >
-            Designer
-          </button>
+          {activeView === 'designer' && (
+            <button className="menu-item active">Designer</button>
+          )}
         </div>
         <div className="header-actions">
           <select
@@ -834,8 +1071,20 @@ export default function App() {
             <option value="advanced">Advanced Builder</option>
           </select>
           {activeView === 'executions' && <button className="btn ghost" onClick={refreshExecutions}>Refresh</button>}
+          {activeView === 'flows' && <button className="btn primary" onClick={createNewFlow}>New Flow</button>}
+          {activeView === 'flows' && (
+            <button className="btn ghost" onClick={copySelectedFlow} disabled={!selectedFlowRow}>
+              Copy Flow
+            </button>
+          )}
           {activeView === 'flows' && <button className="btn ghost" onClick={() => templateFileInputRef.current?.click()}>Import Flows</button>}
           {activeView === 'flows' && <button className="btn ghost" onClick={handleExportTemplates}>Export Flows</button>}
+          {activeView === 'designer' && <button className="btn ghost" onClick={() => setActiveView('flows')}>Back to Flows</button>}
+          {activeView === 'designer' && (
+            <button className="btn ghost" onClick={saveDesignerFlow} disabled={!designerFlowId}>
+              {designerFlowIsPredefined ? 'Save As Copy' : 'Save Flow'}
+            </button>
+          )}
           {activeView === 'designer' && <button className="btn ghost" onClick={() => workflowFileInputRef.current?.click()}>Import</button>}
           {activeView === 'designer' && <button className="btn ghost" onClick={handleExport}>Save</button>}
           {activeView === 'designer' && <button className="btn primary" onClick={runWorkflow} disabled={runLoading}>Run</button>}
@@ -913,89 +1162,115 @@ export default function App() {
           <div className="page-header">
             <div>
               <div className="page-title">Flow Library</div>
-              <div className="page-subtitle">Predefined workflows with lifecycle controls and quick actions.</div>
+              <div className="page-subtitle">Predefined flows are read-only. Copy them to customize.</div>
             </div>
           </div>
-          {Object.entries(groupedTemplateRecords).map(([category, templates]) => (
-            <div key={category} className="category-block">
-              <div className="section-label">{category}</div>
-              <div className="table-wrap">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Flow</th>
-                      <th>Enabled</th>
-                      <th>Auto-run</th>
-                      <th>Schedule</th>
-                      <th>Device</th>
-                      <th>Last Run</th>
-                      <th>Status</th>
-                      <th>Actions</th>
+          <div className="flow-toolbar">
+            <input
+              className="input flow-search"
+              placeholder="Search flows"
+              value={flowQuery}
+              onChange={(event) => setFlowQuery(event.target.value)}
+            />
+            <select className="input table-input" value={flowTypeFilter} onChange={(event) => setFlowTypeFilter(event.target.value)}>
+              <option value="all">all types</option>
+              <option value="predefined">predefined</option>
+              <option value="custom">custom</option>
+            </select>
+            <select className="input table-input" value={flowStateFilter} onChange={(event) => setFlowStateFilter(event.target.value)}>
+              <option value="all">all states</option>
+              <option value="enabled">enabled</option>
+              <option value="disabled">disabled</option>
+            </select>
+            <select className="input table-input" value={flowSort} onChange={(event) => setFlowSort(event.target.value)}>
+              <option value="name_asc">name a-z</option>
+              <option value="name_desc">name z-a</option>
+              <option value="last_run_desc">last run latest</option>
+              <option value="last_run_asc">last run oldest</option>
+            </select>
+          </div>
+          {flowRows.length === 0 && (
+            <div className="run-log">No flows match this filter. Try a different filter or create a new flow.</div>
+          )}
+          {flowRows.length > 0 && (
+            <div className="table-wrap">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Flow</th>
+                    <th>Type</th>
+                    <th>Enabled</th>
+                    <th>Auto</th>
+                    <th>Schedule</th>
+                    <th>Device</th>
+                    <th>Last Run</th>
+                    <th>Status</th>
+                    <th>Menu</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {flowRows.map((flow) => (
+                    <tr
+                      key={flow.id}
+                      className={selectedFlowId === flow.id ? 'is-selected' : ''}
+                      onClick={() => {
+                        setSelectedFlowId(flow.id);
+                        setRowMenuFlowId('');
+                      }}
+                    >
+                      <td>
+                        <div className="table-title">{flow.name}</div>
+                        <div className="table-subtitle">{flow.description || flow.id}</div>
+                      </td>
+                      <td>
+                        <span className={`status-pill ${flow.isPredefined ? 'status-waiting' : 'status-completed'}`}>
+                          {flow.isPredefined ? 'predefined' : 'custom'}
+                        </span>
+                      </td>
+                      <td>{flow.config.enabled ? 'yes' : 'no'}</td>
+                      <td>{flow.config.autoRun ? 'yes' : 'no'}</td>
+                      <td>{flow.config.schedule || 'manual'}</td>
+                      <td>{flow.config.device || 'local'}</td>
+                      <td>{formatDateTime(flow.config.lastRunAt)}</td>
+                      <td>
+                        <span className={`status-pill status-${flow.config.lastStatus || 'idle'}`}>{flow.config.lastStatus || 'idle'}</span>
+                      </td>
+                      <td className="menu-cell">
+                        <button
+                          className="btn ghost menu-trigger"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setSelectedFlowId(flow.id);
+                            setRowMenuFlowId((prev) => (prev === flow.id ? '' : flow.id));
+                          }}
+                        >
+                          Actions
+                        </button>
+                        {rowMenuFlowId === flow.id && (
+                          <div className="row-menu" onClick={(event) => event.stopPropagation()}>
+                            <button className="row-menu-item" onClick={() => { openFlowInDesigner(flow); setRowMenuFlowId(''); }}>Open in Designer</button>
+                            <button className="row-menu-item" onClick={async () => { await runTemplateNow(flow, 'table'); setRowMenuFlowId(''); }}>Run Now</button>
+                            <button className="row-menu-item" onClick={async () => { await updateTemplateConfig(flow.id, { enabled: !flow.config.enabled }); setRowMenuFlowId(''); }}>
+                              {flow.config.enabled ? 'Disable' : 'Enable'}
+                            </button>
+                            <button className="row-menu-item" onClick={async () => { await updateTemplateConfig(flow.id, { autoRun: !flow.config.autoRun }); setRowMenuFlowId(''); }}>
+                              {flow.config.autoRun ? 'Auto-run: off' : 'Auto-run: on'}
+                            </button>
+                            <button className="row-menu-item" onClick={async () => { await updateTemplateConfig(flow.id, { schedule: 'manual' }); setRowMenuFlowId(''); }}>Schedule: manual</button>
+                            <button className="row-menu-item" onClick={async () => { await updateTemplateConfig(flow.id, { schedule: 'hourly' }); setRowMenuFlowId(''); }}>Schedule: hourly</button>
+                            <button className="row-menu-item" onClick={async () => { await updateTemplateConfig(flow.id, { schedule: 'every_15m' }); setRowMenuFlowId(''); }}>Schedule: every 15m</button>
+                            <button className="row-menu-item" onClick={async () => { await updateTemplateConfig(flow.id, { schedule: 'daily_9am' }); setRowMenuFlowId(''); }}>Schedule: daily 9am</button>
+                            <button className="row-menu-item" onClick={async () => { await copyFlow(flow); setRowMenuFlowId(''); }}>Copy Flow</button>
+                            <button className="row-menu-item" onClick={() => { exportSingleFlow(flow); setRowMenuFlowId(''); }}>Export Flow</button>
+                          </div>
+                        )}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {templates.map((template) => {
-                      const config = templateConfigs[template.id] || defaultTemplateConfig(template);
-                      return (
-                        <tr key={template.id}>
-                          <td>
-                            <div className="table-title">{template.name}</div>
-                            <div className="table-subtitle">{template.description}</div>
-                          </td>
-                          <td>
-                            <input
-                              type="checkbox"
-                              checked={Boolean(config.enabled)}
-                              onChange={(event) => updateTemplateConfig(template.id, { enabled: event.target.checked })}
-                            />
-                          </td>
-                          <td>
-                            <input
-                              type="checkbox"
-                              checked={Boolean(config.autoRun)}
-                              onChange={(event) => updateTemplateConfig(template.id, { autoRun: event.target.checked })}
-                            />
-                          </td>
-                          <td>
-                            <select
-                              className="input table-input"
-                              value={config.schedule || 'manual'}
-                              onChange={(event) => updateTemplateConfig(template.id, { schedule: event.target.value })}
-                            >
-                              <option value="manual">manual</option>
-                              <option value="every_15m">every 15m</option>
-                              <option value="hourly">hourly</option>
-                              <option value="daily_9am">daily 09:00</option>
-                            </select>
-                          </td>
-                          <td>
-                            <select
-                              className="input table-input"
-                              value={config.device || 'local'}
-                              onChange={(event) => updateTemplateConfig(template.id, { device: event.target.value })}
-                            >
-                              <option value="local">local</option>
-                              <option value="home_hub">home hub</option>
-                              <option value="robot_unit">robot unit</option>
-                              <option value="cloud_runner">cloud runner</option>
-                            </select>
-                          </td>
-                          <td>{formatDateTime(config.lastRunAt)}</td>
-                          <td>
-                            <span className={`status-pill status-${config.lastStatus || 'idle'}`}>{config.lastStatus || 'idle'}</span>
-                          </td>
-                          <td className="action-cell">
-                            <button className="btn ghost" onClick={() => openTemplateInDesigner(template)}>Designer</button>
-                            <button className="btn primary" onClick={() => runTemplateNow(template, 'table')} disabled={runLoading}>Run</button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          ))}
+          )}
         </section>
       )}
 

@@ -639,6 +639,18 @@ body {
   gap: 8px;
 }
 
+.flow-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.flow-search {
+  min-width: 260px;
+  max-width: 440px;
+}
+
 .table-wrap {
   width: 100%;
   overflow: auto;
@@ -673,6 +685,18 @@ body {
   border-bottom: 0;
 }
 
+.data-table tbody tr {
+  transition: background-color 0.14s ease;
+}
+
+.data-table tbody tr:hover {
+  background: #f6fcfe;
+}
+
+.data-table tbody tr.is-selected {
+  background: #eaf7f8;
+}
+
 .table-title {
   font-weight: 600;
 }
@@ -689,6 +713,47 @@ body {
 .action-cell {
   display: flex;
   gap: 8px;
+}
+
+.menu-cell {
+  position: relative;
+  width: 130px;
+}
+
+.menu-trigger {
+  width: 100%;
+}
+
+.row-menu {
+  position: absolute;
+  right: 12px;
+  top: calc(100% - 2px);
+  min-width: 188px;
+  padding: 6px;
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(16, 44, 53, 0.14);
+  z-index: 10;
+  display: grid;
+  gap: 3px;
+}
+
+.row-menu-item {
+  border: 0;
+  text-align: left;
+  background: transparent;
+  color: var(--ink);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 8px;
+  cursor: pointer;
+}
+
+.row-menu-item:hover {
+  background: #edf8f9;
 }
 
 .status-pill {
@@ -760,5 +825,14 @@ body {
 
   .template-item {
     grid-template-columns: 1fr;
+  }
+
+  .menu-cell {
+    width: 100px;
+  }
+
+  .flow-search {
+    min-width: 180px;
+    width: 100%;
   }
 }
