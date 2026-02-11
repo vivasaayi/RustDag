@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 function isTextAreaField(key, schema) {
   if (schema?.format === 'textarea' || schema?.format === 'multiline') return true;
@@ -246,6 +246,14 @@ export default function Inspector({ node, onUpdateProperties, onUpdatePorts, onR
       }));
   }, [schema]);
 
+  const [openGroups, setOpenGroups] = useState(() => new Set());
+
+  useEffect(() => {
+    if (!node) return;
+    const firstId = groupedFields[0]?.id;
+    setOpenGroups(firstId ? new Set([firstId]) : new Set());
+  }, [node?.id, groupedFields]);
+
   const handleFieldChange = (key, nextValue) => {
     onUpdateProperties({
       ...properties,
@@ -287,7 +295,20 @@ export default function Inspector({ node, onUpdateProperties, onUpdatePorts, onR
       </div>
 
       {groupedFields.map((group) => (
-        <details key={group.id} className="inspector-accordion" open={group.defaultOpen}>
+        <details
+          key={group.id}
+          className="inspector-accordion"
+          open={openGroups.has(group.id)}
+          onToggle={(event) => {
+            const isOpen = Boolean(event.currentTarget?.open);
+            setOpenGroups((prev) => {
+              const next = new Set(prev);
+              if (isOpen) next.add(group.id);
+              else next.delete(group.id);
+              return next;
+            });
+          }}
+        >
           <summary className="inspector-accordion-title">
             <span>{group.title}</span>
             <span className="inspector-accordion-count">{group.fields.length}</span>

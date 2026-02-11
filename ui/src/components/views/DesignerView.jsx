@@ -1,7 +1,8 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ReactFlow, { Background, Controls, MiniMap } from 'reactflow';
 import Inspector from '../Inspector.jsx';
 import StageNode from '../StageNode.jsx';
+import WorkflowMetaPanel from '../WorkflowMetaPanel.jsx';
 
 const nodeTypes = { stage: StageNode };
 
@@ -15,8 +16,17 @@ export default function DesignerView({
   onNodesChange,
   onEdgesChange,
   onConnect,
+  onAutoLayout,
+  onAlign,
+  onZoomReset,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
   handleSelectionChange,
   isValidConnection,
+  workflowMeta,
+  onWorkflowMetaChange,
   selectedNode,
   updateSelectedNodeProperties,
   updateSelectedNodePorts,
@@ -35,9 +45,11 @@ export default function DesignerView({
   decisionByNode,
   setDecisionByNode,
   resumePending,
+  registerDesignerApi,
 }) {
   const [activeCategory, setActiveCategory] = useState('all');
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
+  const [pointerDrag, setPointerDrag] = useState(null);
   const reactFlowWrapper = useRef(null);
 
   const categories = useMemo(
@@ -60,36 +72,121 @@ export default function DesignerView({
     return map;
   }, [groupedStages]);
 
-  const onPaletteDragStart = (event, stage) => {
-    event.dataTransfer.setData('application/x-flowforge-stage', stage.id);
-    event.dataTransfer.setData('text/plain', stage.id);
-    event.dataTransfer.effectAllowed = 'copy';
-  };
-
-  const onCanvasDragOver = (event) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'copy';
-  };
-
-  const onCanvasDrop = (event) => {
-    event.preventDefault();
-    const stageId =
-      event.dataTransfer.getData('application/x-flowforge-stage') ||
-      event.dataTransfer.getData('text/plain');
+  const placeStageAtClientPoint = useCallback((stageId, clientX, clientY) => {
     if (!stageId || !reactFlowInstance) return;
     const stage = stageMapById[stageId];
     if (!stage) return;
     const bounds = reactFlowWrapper.current?.getBoundingClientRect();
     if (!bounds) return;
-    const position = reactFlowInstance.project({
-      x: event.clientX - bounds.left,
-      y: event.clientY - bounds.top,
-    });
+    if (clientX < bounds.left || clientX > bounds.right || clientY < bounds.top || clientY > bounds.bottom) {
+      return;
+    }
+
+    let position = null;
+    if (typeof reactFlowInstance.screenToFlowPosition === 'function') {
+      position = reactFlowInstance.screenToFlowPosition({ x: clientX, y: clientY });
+    } else if (typeof reactFlowInstance.project === 'function') {
+      position = reactFlowInstance.project({
+        x: clientX - bounds.left,
+        y: clientY - bounds.top,
+      });
+    }
+    if (!position) return;
     addStage(stage, position);
+  }, [reactFlowInstance, stageMapById, addStage]);
+
+  const onPalettePointerDown = (event, stage) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    if (typeof event.currentTarget?.setPointerCapture === 'function') {
+      try {
+        event.currentTarget.setPointerCapture(event.pointerId);
+      } catch (_) {
+        // Some WebKit variants can throw when capture is unavailable.
+      }
+    }
+    setPointerDrag({
+      stageId: stage.id,
+      label: stage.label,
+      icon: stage.icon || 'ST',
+      startX: event.clientX,
+      startY: event.clientY,
+      x: event.clientX,
+      y: event.clientY,
+      moved: false,
+    });
   };
 
+  const finishPointerDrag = useCallback((clientX, clientY) => {
+    setPointerDrag((current) => {
+      if (!current) return null;
+      const dropX = Number.isFinite(clientX) ? clientX : current.x;
+      const dropY = Number.isFinite(clientY) ? clientY : current.y;
+
+      if (current.moved) {
+        placeStageAtClientPoint(current.stageId, dropX, dropY);
+      } else {
+        const stage = stageMapById[current.stageId];
+        if (stage) addStage(stage);
+      }
+      return null;
+    });
+  }, [addStage, placeStageAtClientPoint, stageMapById]);
+
+  useEffect(() => {
+    if (!pointerDrag) return undefined;
+
+    const updateDrag = (clientX, clientY) => {
+      if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return;
+      setPointerDrag((current) => {
+        if (!current) return current;
+        const moved = current.moved || Math.hypot(clientX - current.startX, clientY - current.startY) > 6;
+        return {
+          ...current,
+          x: clientX,
+          y: clientY,
+          moved,
+        };
+      });
+    };
+
+    const onPointerMove = (event) => updateDrag(event.clientX, event.clientY);
+    const onMouseMove = (event) => updateDrag(event.clientX, event.clientY);
+    const onPointerUp = (event) => finishPointerDrag(event.clientX, event.clientY);
+    const onMouseUp = (event) => finishPointerDrag(event.clientX, event.clientY);
+    const onPointerCancel = () => finishPointerDrag(undefined, undefined);
+    const onWindowBlur = () => finishPointerDrag(undefined, undefined);
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('mouseup', onMouseUp);
+    window.addEventListener('pointercancel', onPointerCancel);
+    window.addEventListener('blur', onWindowBlur);
+    return () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('mouseup', onMouseUp);
+      window.removeEventListener('pointercancel', onPointerCancel);
+      window.removeEventListener('blur', onWindowBlur);
+    };
+  }, [pointerDrag, finishPointerDrag]);
+
+  useEffect(() => {
+    if (typeof registerDesignerApi !== 'function') return undefined;
+    registerDesignerApi({
+      getNodes: () => (reactFlowInstance?.getNodes ? reactFlowInstance.getNodes() : nodes),
+      getEdges: () => (reactFlowInstance?.getEdges ? reactFlowInstance.getEdges() : edges),
+      fitView: (...args) => reactFlowInstance?.fitView?.(...args),
+      setViewport: (...args) => reactFlowInstance?.setViewport?.(...args),
+      zoomTo: (...args) => reactFlowInstance?.zoomTo?.(...args),
+    });
+    return () => registerDesignerApi(null);
+  }, [registerDesignerApi, reactFlowInstance, nodes, edges]);
+
   return (
-    <div className="designer-page">
+    <div className={`designer-page ${pointerDrag ? 'is-dragging-stage' : ''}`}>
       <div className="designer">
         <aside className="panel palette">
           <div className="panel-title">Palette</div>
@@ -116,11 +213,11 @@ export default function DesignerView({
               <button
                 key={stage.id}
                 type="button"
-                draggable
                 className="palette-icon-btn"
                 title={`${stage.label}\n${stage.description || ''}\nrisk: ${stage.riskLevel || 'medium'}`}
-                onClick={() => addStage(stage)}
-                onDragStart={(event) => onPaletteDragStart(event, stage)}
+                draggable={false}
+                onDragStart={(event) => event.preventDefault()}
+                onPointerDown={(event) => onPalettePointerDown(event, stage)}
               >
                 <span className="palette-icon-main">{stage.icon || 'ST'}</span>
                 <span className="palette-icon-label">{stage.label}</span>
@@ -132,19 +229,17 @@ export default function DesignerView({
         <main className="panel canvas">
           <div className="canvas-toolbar">
             <button className="btn ghost" onClick={runValidateOnly}>Validate</button>
-            <button className="btn ghost">Auto-Layout</button>
-            <button className="btn ghost">Align</button>
-            <button className="btn ghost">Zoom 100%</button>
+            <button className="btn ghost" onClick={onAutoLayout}>Auto-Layout</button>
+            <button className="btn ghost" onClick={onAlign}>Align</button>
+            <button className="btn ghost" onClick={onZoomReset}>Zoom 100%</button>
             <div className="spacer" />
-            <button className="btn ghost">Undo</button>
-            <button className="btn ghost">Redo</button>
+            <button className="btn ghost" onClick={onUndo} disabled={!canUndo}>Undo</button>
+            <button className="btn ghost" onClick={onRedo} disabled={!canRedo}>Redo</button>
           </div>
 
           <div
             className="canvas-grid"
             ref={reactFlowWrapper}
-            onDragOver={onCanvasDragOver}
-            onDrop={onCanvasDrop}
           >
             <ReactFlow
               nodes={nodes}
@@ -169,6 +264,7 @@ export default function DesignerView({
 
         <aside className="panel inspector">
           <div className="panel-title">Inspector</div>
+          <WorkflowMetaPanel workflowMeta={workflowMeta} onChange={onWorkflowMetaChange} />
           <Inspector
             node={selectedNode}
             onUpdateProperties={updateSelectedNodeProperties}
@@ -177,6 +273,16 @@ export default function DesignerView({
           />
         </aside>
       </div>
+
+      {pointerDrag?.moved && (
+        <div
+          className="palette-drag-preview"
+          style={{ left: pointerDrag.x + 14, top: pointerDrag.y + 14 }}
+        >
+          <span className="palette-drag-icon">{pointerDrag.icon}</span>
+          <span>{pointerDrag.label}</span>
+        </div>
+      )}
 
       <section className="run-panel">
         <div className="run-header">

@@ -52,17 +52,33 @@ function clonePorts(stage) {
 }
 
 function serializeGraph(nodes, edges) {
+  const safePosition = (node, fallback = { x: 80, y: 80 }) => {
+    const candidate = node?.position || node?.positionAbsolute || fallback;
+    const x = Number(candidate?.x);
+    const y = Number(candidate?.y);
+    return {
+      x: Number.isFinite(x) ? x : fallback.x,
+      y: Number.isFinite(y) ? y : fallback.y,
+    };
+  };
+
   return {
     version: 1,
-    nodes: nodes.map((node) => ({
-      id: node.id,
-      type: node.type,
-      position: node.position,
-      stageId: node.data.stageId,
-      label: node.data.label,
-      properties: node.data.properties,
-      ports: node.data.ports,
-    })),
+    nodes: nodes.map((node, index) => {
+      const fallback = {
+        x: 80 + (index % 4) * 220,
+        y: 80 + Math.floor(index / 4) * 160,
+      };
+      return {
+        id: node.id,
+        type: node.type,
+        position: safePosition(node, fallback),
+        stageId: node.data.stageId,
+        label: node.data.label,
+        properties: node.data.properties,
+        ports: node.data.ports,
+      };
+    }),
     edges: edges.map((edge) => ({
       id: edge.id,
       source: edge.source,
@@ -104,7 +120,7 @@ function findPort(stage, portGroup, handleId, portsOverride) {
 }
 
 function materializeWorkflow(workflow, stageById) {
-  const nextNodes = (workflow?.nodes || []).map((node) => {
+  const nextNodes = (workflow?.nodes || []).map((node, index) => {
     const stage = stageById[node.stageId] || {
       id: node.stageId,
       label: node.label || 'Unknown Stage',
@@ -113,10 +129,21 @@ function materializeWorkflow(workflow, stageById) {
       riskLevel: 'high',
     };
 
+    const fallbackPosition = {
+      x: 80 + (index % 4) * 240,
+      y: 80 + Math.floor(index / 4) * 180,
+    };
+    const x = Number(node?.position?.x);
+    const y = Number(node?.position?.y);
+    const nextPosition = {
+      x: Number.isFinite(x) ? x : fallbackPosition.x,
+      y: Number.isFinite(y) ? y : fallbackPosition.y,
+    };
+
     return {
       id: node.id,
       type: 'stage',
-      position: node.position || { x: 0, y: 0 },
+      position: nextPosition,
       data: {
         stageId: node.stageId,
         stage,
@@ -137,6 +164,81 @@ function materializeWorkflow(workflow, stageById) {
   }));
 
   return { nodes: nextNodes, edges: nextEdges };
+}
+
+function cloneGraphSnapshot(nodes, edges) {
+  return JSON.parse(JSON.stringify({ nodes, edges }));
+}
+
+function computeAutoLayout(nodes, edges) {
+  const nodeById = new Map(nodes.map((node) => [node.id, node]));
+  const outgoing = new Map();
+  const indegree = new Map();
+
+  nodes.forEach((node) => {
+    outgoing.set(node.id, []);
+    indegree.set(node.id, 0);
+  });
+
+  edges.forEach((edge) => {
+    if (!nodeById.has(edge.source) || !nodeById.has(edge.target)) return;
+    outgoing.get(edge.source).push(edge.target);
+    indegree.set(edge.target, (indegree.get(edge.target) || 0) + 1);
+  });
+
+  const levelById = new Map();
+  const queue = [];
+  indegree.forEach((degree, id) => {
+    if (degree === 0) queue.push(id);
+  });
+  if (queue.length === 0 && nodes.length > 0) queue.push(nodes[0].id);
+
+  while (queue.length > 0) {
+    const currentId = queue.shift();
+    const currentLevel = levelById.get(currentId) || 0;
+    const nextIds = outgoing.get(currentId) || [];
+    nextIds.forEach((nextId) => {
+      const nextLevel = Math.max(levelById.get(nextId) || 0, currentLevel + 1);
+      levelById.set(nextId, nextLevel);
+      const nextDegree = (indegree.get(nextId) || 0) - 1;
+      indegree.set(nextId, nextDegree);
+      if (nextDegree === 0) queue.push(nextId);
+    });
+  }
+
+  const groupedByLevel = new Map();
+  nodes.forEach((node) => {
+    const level = levelById.get(node.id) || 0;
+    if (!groupedByLevel.has(level)) groupedByLevel.set(level, []);
+    groupedByLevel.get(level).push(node);
+  });
+
+  groupedByLevel.forEach((groupNodes) => {
+    groupNodes.sort((a, b) => (a.position?.y || 0) - (b.position?.y || 0));
+  });
+
+  const columnGap = 300;
+  const rowGap = 190;
+  const startX = 120;
+  const startY = 100;
+  const layoutById = new Map();
+
+  Array.from(groupedByLevel.keys())
+    .sort((a, b) => a - b)
+    .forEach((level) => {
+      const groupNodes = groupedByLevel.get(level) || [];
+      groupNodes.forEach((node, index) => {
+        layoutById.set(node.id, {
+          x: startX + level * columnGap,
+          y: startY + index * rowGap,
+        });
+      });
+    });
+
+  return nodes.map((node) => ({
+    ...node,
+    position: layoutById.get(node.id) || node.position,
+  }));
 }
 
 function collectSecretRefs(value, refs) {
@@ -327,6 +429,7 @@ function starterWorkflow() {
       {
         id: 'start_1',
         stageId: 'start',
+        position: { x: 120, y: 140 },
         label: 'Start',
         properties: {},
         ports: { inputs: [], outputs: [{ id: 'out' }] },
@@ -334,6 +437,7 @@ function starterWorkflow() {
       {
         id: 'stop_1',
         stageId: 'stop',
+        position: { x: 420, y: 140 },
         label: 'Stop',
         properties: {},
         ports: { inputs: [{ id: 'in' }], outputs: [] },
@@ -397,8 +501,14 @@ export default function App() {
   const [templateConfigs, setTemplateConfigs] = useState(() => mergeTemplateConfigsFromBackend([], templateLibrary));
   const [executionRows, setExecutionRows] = useState([]);
   const [autoRunMessage, setAutoRunMessage] = useState('');
+  const [designerFlowMeta, setDesignerFlowMeta] = useState(null);
   const workflowFileInputRef = useRef(null);
   const templateFileInputRef = useRef(null);
+  const designerApiRef = useRef(null);
+  const historyPastRef = useRef([]);
+  const historyFutureRef = useRef([]);
+  const historyLockRef = useRef(false);
+  const [historyVersion, setHistoryVersion] = useState(0);
 
   const visibleProfiles = useMemo(() => {
     if (profileMode === 'everyday') return new Set(['everyday']);
@@ -423,21 +533,95 @@ export default function App() {
 
   const selectedNode = nodes.find((node) => node.id === selectedNodeId) || null;
 
+  const resetHistory = useCallback(() => {
+    historyPastRef.current = [];
+    historyFutureRef.current = [];
+    setHistoryVersion((v) => v + 1);
+  }, []);
+
+  const pushHistorySnapshot = useCallback((snapshotNodes = nodes, snapshotEdges = edges) => {
+    if (historyLockRef.current) return;
+    const serialized = JSON.stringify(cloneGraphSnapshot(snapshotNodes, snapshotEdges));
+    const last = historyPastRef.current[historyPastRef.current.length - 1];
+    if (serialized === last) return;
+    historyPastRef.current.push(serialized);
+    if (historyPastRef.current.length > 120) {
+      historyPastRef.current.shift();
+    }
+    historyFutureRef.current = [];
+    setHistoryVersion((v) => v + 1);
+  }, [nodes, edges]);
+
+  const restoreHistorySnapshot = useCallback((serialized) => {
+    if (!serialized) return;
+    let parsed;
+    try {
+      parsed = JSON.parse(serialized);
+    } catch (_) {
+      return;
+    }
+    historyLockRef.current = true;
+    setNodes(parsed.nodes || []);
+    setEdges(parsed.edges || []);
+    requestAnimationFrame(() => {
+      historyLockRef.current = false;
+    });
+  }, [setNodes, setEdges]);
+
+  const canUndo = useMemo(() => historyPastRef.current.length > 0, [historyVersion]);
+  const canRedo = useMemo(() => historyFutureRef.current.length > 0, [historyVersion]);
+
+  const undoGraph = useCallback(() => {
+    if (historyPastRef.current.length === 0) return;
+    const previous = historyPastRef.current.pop();
+    const current = JSON.stringify(cloneGraphSnapshot(nodes, edges));
+    historyFutureRef.current.push(current);
+    restoreHistorySnapshot(previous);
+    setHistoryVersion((v) => v + 1);
+  }, [nodes, edges, restoreHistorySnapshot]);
+
+  const redoGraph = useCallback(() => {
+    if (historyFutureRef.current.length === 0) return;
+    const next = historyFutureRef.current.pop();
+    const current = JSON.stringify(cloneGraphSnapshot(nodes, edges));
+    historyPastRef.current.push(current);
+    restoreHistorySnapshot(next);
+    setHistoryVersion((v) => v + 1);
+  }, [nodes, edges, restoreHistorySnapshot]);
+
   const addStage = useCallback(
     (stage, position) => {
       const defaultPosition = { x: 100, y: 100 };
       const nextPosition = position || defaultPosition;
+      pushHistorySnapshot();
       setNodes((nds) => nds.concat(buildNodeFromStage(stage, nextPosition)));
     },
-    [setNodes]
+    [setNodes, pushHistorySnapshot]
   );
 
   const onConnect = useCallback(
     (connection) => {
+      pushHistorySnapshot();
       setEdges((eds) => addEdge({ ...connection, type: 'smoothstep' }, eds));
     },
-    [setEdges]
+    [setEdges, pushHistorySnapshot]
   );
+
+  const onNodesChangeTracked = useCallback((changes) => {
+    const shouldRecord = changes.some((change) =>
+      change.type === 'add' ||
+      change.type === 'remove' ||
+      (change.type === 'position' && change.dragging === false)
+    );
+    if (shouldRecord) pushHistorySnapshot();
+    onNodesChange(changes);
+  }, [onNodesChange, pushHistorySnapshot]);
+
+  const onEdgesChangeTracked = useCallback((changes) => {
+    const shouldRecord = changes.some((change) => change.type === 'add' || change.type === 'remove');
+    if (shouldRecord) pushHistorySnapshot();
+    onEdgesChange(changes);
+  }, [onEdgesChange, pushHistorySnapshot]);
 
   const isValidConnection = useCallback(
     (connection) => {
@@ -456,6 +640,7 @@ export default function App() {
   const updateSelectedNodeProperties = useCallback(
     (nextProperties) => {
       if (!selectedNodeId) return;
+      pushHistorySnapshot();
       setNodes((nds) =>
         nds.map((node) =>
           node.id === selectedNodeId
@@ -464,12 +649,13 @@ export default function App() {
         )
       );
     },
-    [selectedNodeId, setNodes]
+    [selectedNodeId, setNodes, pushHistorySnapshot]
   );
 
   const updateSelectedNodePorts = useCallback(
     (nextPorts) => {
       if (!selectedNodeId) return;
+      pushHistorySnapshot();
       setNodes((nds) =>
         nds.map((node) =>
           node.id === selectedNodeId
@@ -478,12 +664,13 @@ export default function App() {
         )
       );
     },
-    [selectedNodeId, setNodes]
+    [selectedNodeId, setNodes, pushHistorySnapshot]
   );
 
   const removePort = useCallback(
     (kind, portId) => {
       if (!selectedNodeId) return;
+      pushHistorySnapshot();
       setNodes((nds) =>
         nds.map((node) => {
           if (node.id !== selectedNodeId) return node;
@@ -503,25 +690,32 @@ export default function App() {
         })
       );
     },
-    [selectedNodeId, setNodes, setEdges]
+    [selectedNodeId, setNodes, setEdges, pushHistorySnapshot]
   );
 
   const handleExport = () => {
-    const payload = serializeGraph(nodes, edges);
+    const liveNodes = designerApiRef.current?.getNodes?.();
+    const liveEdges = designerApiRef.current?.getEdges?.();
+    const payload = serializeGraph(Array.isArray(liveNodes) ? liveNodes : nodes, Array.isArray(liveEdges) ? liveEdges : edges);
     downloadJsonFile('workflow.json', payload);
   };
 
   const loadWorkflowToCanvas = useCallback((workflow) => {
     const materialized = materializeWorkflow(workflow, stageById);
+    historyLockRef.current = true;
     setNodes(materialized.nodes);
     setEdges(materialized.edges);
+    requestAnimationFrame(() => {
+      historyLockRef.current = false;
+      resetHistory();
+    });
     setRunStatus('idle');
     setRunEvents([]);
     setPendingItems([]);
     setInstanceId('');
     setRunError('');
     setValidationIssues([]);
-  }, [stageById, setNodes, setEdges]);
+  }, [stageById, setNodes, setEdges, resetHistory]);
 
   const handleImportWorkflow = (event) => {
     const file = event.target.files?.[0];
@@ -651,15 +845,60 @@ export default function App() {
   }, [validateCurrentWorkflow, refreshExecutions]);
 
   const runWorkflow = useCallback(async () => {
-    const workflow = serializeGraph(nodes, edges);
+    const liveNodes = designerApiRef.current?.getNodes?.();
+    const liveEdges = designerApiRef.current?.getEdges?.();
+    const workflow = serializeGraph(Array.isArray(liveNodes) ? liveNodes : nodes, Array.isArray(liveEdges) ? liveEdges : edges);
     await runWorkflowGraph(workflow, 'canvas');
   }, [nodes, edges, runWorkflowGraph]);
 
   const runValidateOnly = useCallback(async () => {
-    const workflow = serializeGraph(nodes, edges);
+    const liveNodes = designerApiRef.current?.getNodes?.();
+    const liveEdges = designerApiRef.current?.getEdges?.();
+    const workflow = serializeGraph(Array.isArray(liveNodes) ? liveNodes : nodes, Array.isArray(liveEdges) ? liveEdges : edges);
     setRunError('');
     await validateCurrentWorkflow(workflow);
   }, [nodes, edges, validateCurrentWorkflow]);
+
+  const autoLayoutCanvas = useCallback(() => {
+    const liveNodes = designerApiRef.current?.getNodes?.();
+    const liveEdges = designerApiRef.current?.getEdges?.();
+    const currentNodes = Array.isArray(liveNodes) ? liveNodes : nodes;
+    const currentEdges = Array.isArray(liveEdges) ? liveEdges : edges;
+    if (currentNodes.length === 0) return;
+    pushHistorySnapshot(currentNodes, currentEdges);
+    const laidOut = computeAutoLayout(currentNodes, currentEdges);
+    setNodes(laidOut);
+    requestAnimationFrame(() => {
+      designerApiRef.current?.fitView?.({ padding: 0.18, duration: 220 });
+    });
+  }, [nodes, edges, pushHistorySnapshot, setNodes]);
+
+  const alignToGrid = useCallback(() => {
+    const liveNodes = designerApiRef.current?.getNodes?.();
+    const liveEdges = designerApiRef.current?.getEdges?.();
+    const currentNodes = Array.isArray(liveNodes) ? liveNodes : nodes;
+    const currentEdges = Array.isArray(liveEdges) ? liveEdges : edges;
+    if (currentNodes.length === 0) return;
+    pushHistorySnapshot(currentNodes, currentEdges);
+    const grid = 24;
+    setNodes(currentNodes.map((node) => ({
+      ...node,
+      position: {
+        x: Math.round((node.position?.x || 0) / grid) * grid,
+        y: Math.round((node.position?.y || 0) / grid) * grid,
+      },
+    })));
+  }, [nodes, edges, pushHistorySnapshot, setNodes]);
+
+  const resetZoom = useCallback(() => {
+    if (designerApiRef.current?.setViewport) {
+      designerApiRef.current.setViewport({ x: 0, y: 0, zoom: 1 }, { duration: 180 });
+      return;
+    }
+    if (designerApiRef.current?.zoomTo) {
+      designerApiRef.current.zoomTo(1, { duration: 180 });
+    }
+  }, []);
 
   const resumePending = useCallback(
     async (item) => {
@@ -770,6 +1009,18 @@ export default function App() {
     loadWorkflowToCanvas(flow.workflow);
     setDesignerFlowId(flow.id);
     setDesignerFlowIsPredefined(isPredefined);
+    setDesignerFlowMeta({
+      id: flow.id,
+      name: flow.name || '',
+      description: flow.description || '',
+      category: flow.category || 'User Flows',
+      classification: flow.classification || '',
+      riskLevel: flow.riskLevel || 'low',
+      defaultDevice: flow.defaultDevice || 'local',
+      recommendedSchedule: flow.recommendedSchedule || 'manual',
+      profiles: Array.isArray(flow.profiles) ? flow.profiles : DEFAULT_CUSTOM_PROFILES,
+      tags: Array.isArray(flow.tags) ? flow.tags : [],
+    });
     setActiveView('designer');
   }, [loadWorkflowToCanvas, predefinedFlowIds]);
 
@@ -783,6 +1034,8 @@ export default function App() {
         name,
         category: 'User Flows',
         description: 'User-defined flow',
+        classification: 'general',
+        tags: [],
         profiles: DEFAULT_CUSTOM_PROFILES,
         riskLevel: 'low',
         defaultDevice: 'local',
@@ -808,6 +1061,8 @@ export default function App() {
         name,
         category: flow.category || 'User Flows',
         description: flow.description || `Copy of ${flow.name}`,
+        classification: flow.classification || 'general',
+        tags: Array.isArray(flow.tags) ? flow.tags : [],
         profiles: Array.isArray(flow.profiles) && flow.profiles.length > 0 ? flow.profiles : DEFAULT_CUSTOM_PROFILES,
         riskLevel: flow.riskLevel || 'low',
         defaultDevice: flow.defaultDevice || 'local',
@@ -827,6 +1082,10 @@ export default function App() {
     await copyFlow(selected);
   }, [flowMapById, selectedFlowId, copyFlow]);
 
+  const updateDesignerMeta = useCallback((patch) => {
+    setDesignerFlowMeta((prev) => ({ ...(prev || {}), ...patch }));
+  }, []);
+
   const exportSingleFlow = useCallback((flow) => {
     if (!flow) return;
     downloadJsonFile(`${slugify(flow.name || flow.id)}.json`, {
@@ -836,17 +1095,29 @@ export default function App() {
   }, []);
 
   const saveDesignerFlow = useCallback(async () => {
-    const workflow = serializeGraph(nodes, edges);
+    const liveNodes = designerApiRef.current?.getNodes?.();
+    const liveEdges = designerApiRef.current?.getEdges?.();
+    const workflow = serializeGraph(Array.isArray(liveNodes) ? liveNodes : nodes, Array.isArray(liveEdges) ? liveEdges : edges);
     const source = flowMapById[designerFlowId];
     if (!source) {
       setRunError('No active flow selected in designer.');
       return;
     }
+    const meta = designerFlowMeta || source;
 
     try {
       if (designerFlowIsPredefined) {
         await copyFlow({
           ...source,
+          name: (meta.name || source.name || '').trim() || source.name,
+          description: meta.description || source.description || '',
+          category: meta.category || source.category || 'User Flows',
+          classification: meta.classification || source.classification || '',
+          tags: Array.isArray(meta.tags) ? meta.tags : (source.tags || []),
+          riskLevel: meta.riskLevel || source.riskLevel || 'low',
+          defaultDevice: meta.defaultDevice || source.defaultDevice || 'local',
+          recommendedSchedule: meta.recommendedSchedule || source.recommendedSchedule || 'manual',
+          profiles: Array.isArray(meta.profiles) && meta.profiles.length > 0 ? meta.profiles : (source.profiles || DEFAULT_CUSTOM_PROFILES),
           workflow,
         });
         return;
@@ -854,20 +1125,22 @@ export default function App() {
 
       const definition = {
         id: source.id,
-        name: source.name,
-        category: source.category || 'User Flows',
-        description: source.description || 'User-defined flow',
-        profiles: Array.isArray(source.profiles) && source.profiles.length > 0 ? source.profiles : DEFAULT_CUSTOM_PROFILES,
-        riskLevel: source.riskLevel || 'low',
-        defaultDevice: source.defaultDevice || 'local',
-        recommendedSchedule: source.recommendedSchedule || 'manual',
+        name: (meta.name || source.name || '').trim() || source.name,
+        category: meta.category || source.category || 'User Flows',
+        description: meta.description || source.description || 'User-defined flow',
+        classification: meta.classification || source.classification || '',
+        tags: Array.isArray(meta.tags) ? meta.tags : (source.tags || []),
+        profiles: Array.isArray(meta.profiles) && meta.profiles.length > 0 ? meta.profiles : (source.profiles || DEFAULT_CUSTOM_PROFILES),
+        riskLevel: meta.riskLevel || source.riskLevel || 'low',
+        defaultDevice: meta.defaultDevice || source.defaultDevice || 'local',
+        recommendedSchedule: meta.recommendedSchedule || source.recommendedSchedule || 'manual',
         workflow,
       };
       await upsertFlow(definition);
     } catch (error) {
       setRunError(error?.message || 'Failed to save flow');
     }
-  }, [nodes, edges, flowMapById, designerFlowId, designerFlowIsPredefined, copyFlow, upsertFlow]);
+  }, [nodes, edges, flowMapById, designerFlowId, designerFlowIsPredefined, copyFlow, upsertFlow, designerFlowMeta]);
 
   const filteredStages = useMemo(() => {
     const byProfile = stageLibrary.filter((stage) => {
@@ -1099,11 +1372,20 @@ export default function App() {
           addStage={addStage}
           nodes={nodes}
           edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
+          onNodesChange={onNodesChangeTracked}
+          onEdgesChange={onEdgesChangeTracked}
           onConnect={onConnect}
+          onAutoLayout={autoLayoutCanvas}
+          onAlign={alignToGrid}
+          onZoomReset={resetZoom}
+          onUndo={undoGraph}
+          onRedo={redoGraph}
+          canUndo={canUndo}
+          canRedo={canRedo}
           handleSelectionChange={handleSelectionChange}
           isValidConnection={isValidConnection}
+          workflowMeta={designerFlowMeta}
+          onWorkflowMetaChange={updateDesignerMeta}
           selectedNode={selectedNode}
           updateSelectedNodeProperties={updateSelectedNodeProperties}
           updateSelectedNodePorts={updateSelectedNodePorts}
@@ -1122,6 +1404,9 @@ export default function App() {
           decisionByNode={decisionByNode}
           setDecisionByNode={setDecisionByNode}
           resumePending={resumePending}
+          registerDesignerApi={(api) => {
+            designerApiRef.current = api;
+          }}
         />
       )}
 

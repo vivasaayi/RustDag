@@ -20,6 +20,10 @@ pub struct TemplateDefinition {
     #[serde(default)]
     pub description: String,
     #[serde(default)]
+    pub classification: String,
+    #[serde(default)]
+    pub tags: Vec<String>,
+    #[serde(default)]
     pub profiles: Vec<String>,
     #[serde(default)]
     pub risk_level: String,
@@ -39,6 +43,10 @@ pub struct TemplateRecord {
     pub category: String,
     #[serde(default)]
     pub description: String,
+    #[serde(default)]
+    pub classification: String,
+    #[serde(default)]
+    pub tags: Vec<String>,
     #[serde(default)]
     pub profiles: Vec<String>,
     #[serde(default)]
@@ -172,6 +180,8 @@ fn record_from_definition(def: &TemplateDefinition) -> TemplateRecord {
         name: def.name.clone(),
         category: def.category.clone(),
         description: def.description.clone(),
+        classification: def.classification.clone(),
+        tags: def.tags.clone(),
         profiles: def.profiles.clone(),
         risk_level: def.risk_level.clone(),
         default_device: device.clone(),
@@ -355,6 +365,7 @@ mod tests {
                 crate::workflow::StageNode {
                     id: "s".to_string(),
                     stage_id: "start".to_string(),
+                    position: Some(crate::workflow::NodePosition { x: 120.0, y: 160.0 }),
                     label: None,
                     properties: Some(json!({})),
                     ports: Some(crate::workflow::Ports {
@@ -369,6 +380,7 @@ mod tests {
                 crate::workflow::StageNode {
                     id: "e".to_string(),
                     stage_id: "stop".to_string(),
+                    position: Some(crate::workflow::NodePosition { x: 420.0, y: 160.0 }),
                     label: None,
                     properties: Some(json!({})),
                     ports: Some(crate::workflow::Ports {
@@ -428,6 +440,8 @@ mod tests {
             name: "Template 1".to_string(),
             category: "tests".to_string(),
             description: "d".to_string(),
+            classification: "general".to_string(),
+            tags: vec!["test".to_string()],
             profiles: vec!["everyday".to_string()],
             risk_level: "low".to_string(),
             default_device: "local".to_string(),
@@ -473,5 +487,14 @@ mod tests {
         let listed = list_templates().unwrap();
         assert_eq!(listed.len(), 1);
         assert_eq!(listed[0].last_status, "completed");
+        let start_node = listed[0]
+            .workflow
+            .nodes
+            .iter()
+            .find(|node| node.id == "s")
+            .and_then(|node| node.position.as_ref())
+            .unwrap();
+        assert_eq!(start_node.x, 120.0);
+        assert_eq!(start_node.y, 160.0);
     }
 }

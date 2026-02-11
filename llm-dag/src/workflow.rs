@@ -31,9 +31,17 @@ pub struct StageNode {
     pub id: String,
     #[serde(rename = "stageId")]
     pub stage_id: String,
+    #[serde(default)]
+    pub position: Option<NodePosition>,
     pub label: Option<String>,
     pub properties: Option<Value>,
     pub ports: Option<Ports>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct NodePosition {
+    pub x: f64,
+    pub y: f64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -747,6 +755,7 @@ mod tests {
                 StageNode {
                     id: "start".to_string(),
                     stage_id: "start".to_string(),
+                    position: None,
                     label: None,
                     properties: None,
                     ports: Some(ports(&[], &["out"])),
@@ -754,6 +763,7 @@ mod tests {
                 StageNode {
                     id: "pause1".to_string(),
                     stage_id: "pause".to_string(),
+                    position: None,
                     label: None,
                     properties: None,
                     ports: Some(ports(&["in"], &["approved", "rejected"])),
@@ -761,6 +771,7 @@ mod tests {
                 StageNode {
                     id: "done".to_string(),
                     stage_id: "stop".to_string(),
+                    position: None,
                     label: None,
                     properties: None,
                     ports: Some(ports(&["in"], &[])),
@@ -811,6 +822,7 @@ mod tests {
                 StageNode {
                     id: "start".to_string(),
                     stage_id: "start".to_string(),
+                    position: None,
                     label: None,
                     properties: None,
                     ports: Some(ports(&[], &["out"])),
@@ -818,6 +830,7 @@ mod tests {
                 StageNode {
                     id: "choice".to_string(),
                     stage_id: "exclusive_choice".to_string(),
+                    position: None,
                     label: None,
                     properties: Some(serde_json::json!({"expression": "path_a"})),
                     ports: Some(ports(&["in"], &["path_a", "path_b", "default"])),
@@ -825,6 +838,7 @@ mod tests {
                 StageNode {
                     id: "a".to_string(),
                     stage_id: "stop".to_string(),
+                    position: None,
                     label: None,
                     properties: None,
                     ports: Some(ports(&["in"], &[])),
@@ -832,6 +846,7 @@ mod tests {
                 StageNode {
                     id: "b".to_string(),
                     stage_id: "stop".to_string(),
+                    position: None,
                     label: None,
                     properties: None,
                     ports: Some(ports(&["in"], &[])),
