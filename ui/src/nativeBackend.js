@@ -7,19 +7,7 @@ export async function healthcheck() {
     return window.Capacitor.Plugins.NativeBackend.healthcheck();
   }
   // fallback to HTTP
-  const res = await fetch('http://localhost:7000/healthcheck');
-  return res.json();
-}
-
-export async function executeGraph(payload) {
-  if (isCapacitor && window.Capacitor.Plugins.NativeBackend) {
-    return window.Capacitor.Plugins.NativeBackend.executeGraph({ payload });
-  }
-  const res = await fetch('http://localhost:7000/execute-graph', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
+  const res = await fetch('http://localhost:9091/healthcheck');
   return res.json();
 }
 
@@ -122,7 +110,6 @@ export async function listExecutions(limit = 200) {
 
 export default {
   healthcheck,
-  executeGraph,
   chat,
   executeWorkflow,
   resumeWorkflow,
