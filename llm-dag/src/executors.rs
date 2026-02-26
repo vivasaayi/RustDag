@@ -248,8 +248,16 @@ async fn execute_db_query(props: &Value, _flavor: &str) -> Result<Value, Executo
         for row in rows {
             let mut map = serde_json::Map::new();
             for (idx, col) in row.columns().iter().enumerate() {
-                let value = row.try_get_raw(idx).map_err(|e| ExecutorError::Execution(e.to_string()))?;
-                map.insert(col.name().to_string(), serde_json::json!(format!("{:?}", value)));
+                // Try typed extraction in order of common types before falling back to string
+                let cell_value: Value = row.try_get::<Option<i64>, _>(idx)
+                    .ok()
+                    .flatten()
+                    .map(|v| serde_json::json!(v))
+                    .or_else(|| row.try_get::<Option<f64>, _>(idx).ok().flatten().map(|v| serde_json::json!(v)))
+                    .or_else(|| row.try_get::<Option<bool>, _>(idx).ok().flatten().map(|v| serde_json::json!(v)))
+                    .or_else(|| row.try_get::<Option<String>, _>(idx).ok().flatten().map(|v| serde_json::json!(v)))
+                    .unwrap_or(Value::Null);
+                map.insert(col.name().to_string(), cell_value);
             }
             results.push(Value::Object(map));
         }
@@ -599,6 +607,54 @@ async fn execute_kubernetes(props: &Value) -> Result<Value, ExecutorError> {
     }
 }
 
-async fn execute_inline_script(_props: &Value, _inputs: &HashMap<String, Value>) -> Result<Value, ExecutorError> {
-    Err(ExecutorError::Execution("inline script not implemented yet".to_string()))
+async fn execute_inline_script(props: &Value, inputs: &HashMap<String, Value>) -> Result<Value, ExecutorError> {
+    let code = get_string(props, "code")?;
+    let interpreter = get_optional_string(props, "interpreter").unwrap_or_else(|| "sh".to_string());
+    let timeout_secs = props.get("timeoutSeconds").and_then(|v| v.as_u64()).unwrap_or(30);
+
+    // Write the script to a temp file
+    let tmp_dir = std::env::temp_dir();
+    let script_ext = match interpreter.as_str() {
+        "python" | "python3" => "py",
+        "node" | "nodejs" => "js",
+        _ => "sh",
+    };
+    let script_path = tmp_dir.join(format!("llm_dag_script_{}.{}", uuid::Uuid::new_v4(), script_ext));
+    std::fs::write(&script_path, &code).map_err(|e| ExecutorError::Execution(e.to_string()))?;
+
+    // Serialize inputs as JSON and pass via environment variable
+    let inputs_json = serde_json::to_string(inputs).unwrap_or_else(|_| "{}".to_string());
+
+    let mut cmd = tokio::process::Command::new(&interpreter);
+    cmd.arg(&script_path)
+        .env("INPUTS", &inputs_json)
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped());
+
+    let result = tokio::time::timeout(
+        std::time::Duration::from_secs(timeout_secs),
+        cmd.output(),
+    )
+    .await
+    .map_err(|_| ExecutorError::Execution("inline script timed out".to_string()))
+    .and_then(|r| r.map_err(|e| ExecutorError::Execution(e.to_string())));
+
+    // Clean up the temp file regardless of outcome
+    let _ = std::fs::remove_file(&script_path);
+
+    let output = result?;
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    let exit_code = output.status.code().unwrap_or(-1);
+
+    // Try to parse stdout as JSON for structured output
+    let output_value = serde_json::from_str::<Value>(&stdout.trim())
+        .unwrap_or_else(|_| Value::String(stdout.trim().to_string()));
+
+    Ok(serde_json::json!({
+        "exitCode": exit_code,
+        "output": output_value,
+        "stderr": stderr,
+        "ok": exit_code == 0,
+    }))
 }

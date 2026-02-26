@@ -1,16 +1,18 @@
 use axum::{
-    http::{header, Method},
+    http::{header, Method, StatusCode},
     extract::{Json, Query, State},
+    response::IntoResponse,
     routing::{get, post},
     Router,
 };
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::net::{SocketAddr, TcpListener};
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tokio::time::{sleep, Duration};
+use tokio::time::{sleep, timeout, Duration};
 use tower_http::cors::{Any, CorsLayer};
+
+const WORKFLOW_TIMEOUT_SECS: u64 = 300; // 5 minutes
 
 mod dag;
 mod runner;
@@ -24,7 +26,6 @@ mod template_store;
 mod execution_store;
 
 use dag::{Dag, DagExecutionResult};
-use models::ModelInfo;
 use workflow::{ResumeAction, Workflow, WorkflowExecutionResult};
 
 #[derive(Clone)]
@@ -46,6 +47,7 @@ fn app_router(app_state: AppState) -> Router {
         .allow_headers([header::CONTENT_TYPE, header::ACCEPT, header::AUTHORIZATION]);
 
     Router::new()
+        .route("/healthcheck", get(healthcheck))
         .route("/execute-graph", post(execute_graph))
         .route("/models/list", get(list_models))
         .route("/models/download", post(download_model))
@@ -110,11 +112,22 @@ struct ExecuteGraphResponse {
     result: DagExecutionResult,
 }
 
-async fn execute_graph(Json(payload): Json<ExecuteGraphRequest>) -> Json<ExecuteGraphResponse> {
-    // parse a DAG from payload.graph (we'll accept a simple JSON format)
-    let dag = Dag::from_json(&payload.graph).unwrap_or_else(|_| Dag::empty());
+async fn healthcheck() -> impl IntoResponse {
+    (StatusCode::OK, Json(serde_json::json!({"status": "ok"})))
+}
+
+async fn execute_graph(Json(payload): Json<ExecuteGraphRequest>) -> impl IntoResponse {
+    let dag = match Dag::from_json(&payload.graph) {
+        Ok(dag) => dag,
+        Err(err) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({"error": err})),
+            ).into_response();
+        }
+    };
     let result = dag.execute().await;
-    Json(ExecuteGraphResponse { result })
+    (StatusCode::OK, Json(ExecuteGraphResponse { result })).into_response()
 }
 
 #[derive(Debug, Deserialize)]
@@ -127,16 +140,25 @@ struct ExecuteWorkflowResponse {
     result: WorkflowExecutionResult,
 }
 
-async fn execute_workflow(Json(payload): Json<ExecuteWorkflowRequest>) -> Json<ExecuteWorkflowResponse> {
+async fn execute_workflow(Json(payload): Json<ExecuteWorkflowRequest>) -> impl IntoResponse {
     let mut instance = payload.workflow.new_instance();
-    let result = instance.run().await;
+    let run = timeout(Duration::from_secs(WORKFLOW_TIMEOUT_SECS), instance.run()).await;
+    let result = match run {
+        Ok(result) => result,
+        Err(_) => {
+            return (
+                StatusCode::GATEWAY_TIMEOUT,
+                Json(serde_json::json!({"error": "workflow execution timed out"})),
+            ).into_response();
+        }
+    };
     if result.status == "waiting" {
         let _ = state_store::save_instance(&instance);
     } else {
         let _ = state_store::delete_instance(&instance.id);
     }
     let _ = execution_store::log_result("workflow", &result, None);
-    Json(ExecuteWorkflowResponse { result })
+    (StatusCode::OK, Json(ExecuteWorkflowResponse { result })).into_response()
 }
 
 #[derive(Debug, Deserialize)]
@@ -149,18 +171,14 @@ struct ResumeWorkflowRequest {
 async fn resume_workflow(
     axum::extract::Path(id): axum::extract::Path<String>,
     Json(payload): Json<ResumeWorkflowRequest>,
-) -> Json<ExecuteWorkflowResponse> {
+) -> impl IntoResponse {
     let mut instance = match state_store::load_instance(&id) {
         Ok(state) => state,
         Err(_) => {
-            let result = WorkflowExecutionResult {
-                instance_id: id,
-                status: "not_found".to_string(),
-                outputs: HashMap::new(),
-                events: vec![],
-                pending: vec![],
-            };
-            return Json(ExecuteWorkflowResponse { result });
+            return (
+                StatusCode::NOT_FOUND,
+                Json(serde_json::json!({"error": "workflow instance not found", "instance_id": id})),
+            ).into_response();
         }
     };
 
@@ -170,22 +188,38 @@ async fn resume_workflow(
         payload: payload.payload,
     };
 
-    let result = instance.resume(action).await;
+    let run = timeout(Duration::from_secs(WORKFLOW_TIMEOUT_SECS), instance.resume(action)).await;
+    let result = match run {
+        Ok(result) => result,
+        Err(_) => {
+            return (
+                StatusCode::GATEWAY_TIMEOUT,
+                Json(serde_json::json!({"error": "workflow resume timed out"})),
+            ).into_response();
+        }
+    };
+
     if result.status == "waiting" {
         let _ = state_store::save_instance(&instance);
     } else {
         let _ = state_store::delete_instance(&instance.id);
     }
     let _ = execution_store::log_result(&format!("resume:{id}"), &result, None);
-    Json(ExecuteWorkflowResponse { result })
+    (StatusCode::OK, Json(ExecuteWorkflowResponse { result })).into_response()
 }
 
 async fn get_workflow_state(
     axum::extract::Path(id): axum::extract::Path<String>,
-) -> Json<serde_json::Value> {
+) -> impl IntoResponse {
     match state_store::load_instance(&id) {
-        Ok(state) => Json(serde_json::to_value(state).unwrap_or(serde_json::json!({}))),
-        Err(_) => Json(serde_json::json!({"error": "not_found"})),
+        Ok(state) => (
+            StatusCode::OK,
+            Json(serde_json::to_value(state).unwrap_or(serde_json::json!({}))),
+        ).into_response(),
+        Err(_) => (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({"error": "not_found"})),
+        ).into_response(),
     }
 }
 
@@ -200,24 +234,27 @@ struct DeleteSecretRequest {
     name: String,
 }
 
-async fn list_secrets() -> Json<serde_json::Value> {
+async fn list_secrets() -> impl IntoResponse {
     match secrets::list_secrets() {
-        Ok(items) => Json(serde_json::json!({ "secrets": items })),
-        Err(err) => Json(serde_json::json!({ "error": err })),
+        Ok(items) => (StatusCode::OK, Json(serde_json::json!({ "secrets": items }))).into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({ "error": err }))).into_response(),
     }
 }
 
-async fn set_secret(Json(payload): Json<SetSecretRequest>) -> Json<serde_json::Value> {
+async fn set_secret(Json(payload): Json<SetSecretRequest>) -> impl IntoResponse {
+    if payload.name.trim().is_empty() {
+        return (StatusCode::BAD_REQUEST, Json(serde_json::json!({ "error": "name must not be empty" }))).into_response();
+    }
     match secrets::set_secret(&payload.name, &payload.value) {
-        Ok(_) => Json(serde_json::json!({ "status": "ok" })),
-        Err(err) => Json(serde_json::json!({ "error": err })),
+        Ok(_) => (StatusCode::OK, Json(serde_json::json!({ "status": "ok" }))).into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({ "error": err }))).into_response(),
     }
 }
 
-async fn delete_secret(Json(payload): Json<DeleteSecretRequest>) -> Json<serde_json::Value> {
+async fn delete_secret(Json(payload): Json<DeleteSecretRequest>) -> impl IntoResponse {
     match secrets::delete_secret(&payload.name) {
-        Ok(_) => Json(serde_json::json!({ "status": "ok" })),
-        Err(err) => Json(serde_json::json!({ "error": err })),
+        Ok(_) => (StatusCode::OK, Json(serde_json::json!({ "status": "ok" }))).into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({ "error": err }))).into_response(),
     }
 }
 
@@ -236,58 +273,59 @@ struct ListExecutionsQuery {
     limit: Option<usize>,
 }
 
-async fn list_templates(State(state): State<AppState>) -> Json<serde_json::Value> {
+async fn list_templates(State(state): State<AppState>) -> impl IntoResponse {
     let _guard = state.template_lock.lock().await;
     match template_store::list_templates() {
-        Ok(templates) => Json(serde_json::json!({ "templates": templates })),
-        Err(err) => Json(serde_json::json!({ "error": err, "templates": [] })),
+        Ok(templates) => (StatusCode::OK, Json(serde_json::json!({ "templates": templates }))).into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({ "error": err, "templates": [] }))).into_response(),
     }
 }
 
 async fn sync_templates(
     State(state): State<AppState>,
     Json(payload): Json<SyncTemplatesRequest>,
-) -> Json<serde_json::Value> {
+) -> impl IntoResponse {
     let _guard = state.template_lock.lock().await;
     match template_store::sync_templates(&payload.templates) {
-        Ok(templates) => Json(serde_json::json!({ "status": "ok", "templates": templates })),
-        Err(err) => Json(serde_json::json!({ "error": err, "templates": [] })),
+        Ok(templates) => (StatusCode::OK, Json(serde_json::json!({ "status": "ok", "templates": templates }))).into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({ "error": err, "templates": [] }))).into_response(),
     }
 }
 
 async fn update_template_config(
     State(state): State<AppState>,
     Json(payload): Json<template_store::TemplateConfigPatch>,
-) -> Json<serde_json::Value> {
+) -> impl IntoResponse {
     let _guard = state.template_lock.lock().await;
     match template_store::update_template_config(&payload) {
-        Ok(Some(template)) => Json(serde_json::json!({ "status": "ok", "template": template })),
-        Ok(None) => Json(serde_json::json!({ "error": "not_found" })),
-        Err(err) => Json(serde_json::json!({ "error": err })),
+        Ok(Some(template)) => (StatusCode::OK, Json(serde_json::json!({ "status": "ok", "template": template }))).into_response(),
+        Ok(None) => (StatusCode::NOT_FOUND, Json(serde_json::json!({ "error": "template not found" }))).into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({ "error": err }))).into_response(),
     }
 }
 
 async fn run_template(
     State(state): State<AppState>,
     Json(payload): Json<RunTemplateRequest>,
-) -> Json<serde_json::Value> {
+) -> impl IntoResponse {
     match execute_template_by_id(&state, &payload.id).await {
-        Ok((template, result)) => Json(serde_json::json!({
+        Ok((template, result)) => (StatusCode::OK, Json(serde_json::json!({
             "status": "ok",
             "template": template,
             "result": result
-        })),
-        Err(err) => Json(serde_json::json!({ "error": err })),
+        }))).into_response(),
+        Err(err) if err.contains("not found") => (StatusCode::NOT_FOUND, Json(serde_json::json!({ "error": err }))).into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({ "error": err }))).into_response(),
     }
 }
 
 async fn list_executions(
     Query(query): Query<ListExecutionsQuery>,
-) -> Json<serde_json::Value> {
+) -> impl IntoResponse {
     let limit = query.limit.unwrap_or(200);
     match execution_store::list_records(limit) {
-        Ok(items) => Json(serde_json::json!({ "executions": items })),
-        Err(err) => Json(serde_json::json!({ "error": err, "executions": [] })),
+        Ok(items) => (StatusCode::OK, Json(serde_json::json!({ "executions": items }))).into_response(),
+        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({ "error": err, "executions": [] }))).into_response(),
     }
 }
 
@@ -369,7 +407,7 @@ async fn template_scheduler_tick(state: &AppState) -> Result<(), String> {
     Ok(())
 }
 
-async fn list_models() -> Json<Vec<ModelInfo>> {
+async fn list_models() -> impl IntoResponse {
     let models = models::get_available_models();
     let mut with_status = vec![];
     for m in models {
@@ -378,7 +416,7 @@ async fn list_models() -> Json<Vec<ModelInfo>> {
         m.description = format!("{} - {}", m.description, if downloaded { "Downloaded" } else { "Not downloaded" });
         with_status.push(m);
     }
-    Json(with_status)
+    (StatusCode::OK, Json(with_status)).into_response()
 }
 
 #[derive(Deserialize)]
@@ -386,15 +424,15 @@ struct DownloadRequest {
     name: String,
 }
 
-async fn download_model(Json(payload): Json<DownloadRequest>) -> Json<serde_json::Value> {
+async fn download_model(Json(payload): Json<DownloadRequest>) -> impl IntoResponse {
     let models = models::get_available_models();
     if let Some(model) = models.into_iter().find(|m| m.name == payload.name) {
         match models::download_model(&model).await {
-            Ok(_) => Json(serde_json::json!({"status": "downloaded"})),
-            Err(e) => Json(serde_json::json!({"error": e.to_string()})),
+            Ok(_) => (StatusCode::OK, Json(serde_json::json!({"status": "downloaded"}))).into_response(),
+            Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({"error": e.to_string()}))).into_response(),
         }
     } else {
-        Json(serde_json::json!({"error": "model not found"}))
+        (StatusCode::NOT_FOUND, Json(serde_json::json!({"error": "model not found"}))).into_response()
     }
 }
 
@@ -414,12 +452,14 @@ struct ChatResponse {
     response: String,
 }
 
-async fn chat(Json(payload): Json<ChatRequest>) -> Json<ChatResponse> {
-    // Simple: concatenate messages into prompt
+async fn chat(Json(payload): Json<ChatRequest>) -> impl IntoResponse {
+    if payload.messages.is_empty() {
+        return (StatusCode::BAD_REQUEST, Json(serde_json::json!({"error": "messages must not be empty"}))).into_response();
+    }
     let prompt = payload.messages.iter().map(|m| format!("{}: {}", m.role, m.content)).collect::<Vec<_>>().join("\n");
     let result = runner::run_llm(&prompt, &std::collections::HashMap::new(), "chat").await;
     let response = result.get("text").and_then(|v| v.as_str()).unwrap_or("No response").to_string();
-    Json(ChatResponse { response })
+    (StatusCode::OK, Json(ChatResponse { response })).into_response()
 }
 
 #[cfg(test)]
@@ -477,7 +517,7 @@ mod tests {
 
     #[tokio::test]
     async fn templates_sync_config_run_and_list() {
-        let _guard = crate::TEST_ENV_LOCK.lock().unwrap();
+        let _guard = crate::TEST_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let temp = tempdir().unwrap();
         std::env::set_var("HOME", temp.path());
 
@@ -573,7 +613,7 @@ mod tests {
 
     #[tokio::test]
     async fn templates_config_returns_not_found_for_unknown_id() {
-        let _guard = crate::TEST_ENV_LOCK.lock().unwrap();
+        let _guard = crate::TEST_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let temp = tempdir().unwrap();
         std::env::set_var("HOME", temp.path());
 
@@ -593,7 +633,18 @@ mod tests {
         )
         .await;
 
+        assert_eq!(status, StatusCode::NOT_FOUND);
+        assert!(body["error"].as_str().is_some());
+    }
+
+    #[tokio::test]
+    async fn healthcheck_returns_ok() {
+        let state = AppState {
+            template_lock: Arc::new(Mutex::new(())),
+        };
+        let app = app_router(state);
+        let (status, body) = get_request(&app, "/healthcheck").await;
         assert_eq!(status, StatusCode::OK);
-        assert_eq!(body["error"], "not_found");
+        assert_eq!(body["status"], "ok");
     }
 }

@@ -31,7 +31,10 @@ pub fn get_available_models() -> Vec<ModelInfo> {
 }
 
 pub fn get_models_dir() -> PathBuf {
-    dirs::home_dir().unwrap().join(".llm-dag").join("models")
+    dirs::home_dir()
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join(".llm-dag")
+        .join("models")
 }
 
 pub fn is_model_downloaded(model_name: &str) -> bool {
