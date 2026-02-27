@@ -8,7 +8,6 @@
     "preview": "vite preview",
     "tauri:dev": "TAURI_DEV=true tauri dev",
     "tauri:build": "npm run build && tauri build",
-    "prepare-backend": "../backend/scripts/prepare_native_image.sh",
     "ios:prepare": "./prepare_ios.sh"
   },
   "dependencies": {

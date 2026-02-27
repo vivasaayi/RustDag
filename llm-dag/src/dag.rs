@@ -28,6 +28,7 @@ pub struct DagExecutionResult {
 }
 
 impl Dag {
+    #[allow(dead_code)]
     pub fn empty() -> Self {
         Self { nodes: vec![], edges: vec![] }
     }

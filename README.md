@@ -1,98 +1,56 @@
-# Desktop AI Builder — Minimal Prototype
+# Workflow AI Builder
 
-This repository demonstrates how to build a cross-platform desktop app that lets users visually build LangGraph (LangChain4j/LangGraph4j) graphs and execute them locally.
+A cross-platform desktop app that lets users visually build and execute workflows with AI/LLM integration. Built with a Rust-based workflow engine and React UI.
 
-Goals
-- UI builder (drag & drop nodes, inspector, save/load graph)
-- Java backend that runs graphs using LangChain4j + LangGraph4j
-- Bundle into a single desktop app (macOS .dmg / Windows .exe / Linux .AppImage)
+## Goals
+- UI builder (drag & drop nodes, inspector, save/load workflows)
+- Rust-based workflow engine with support for async execution, human-in-the-loop approval, and LLM integration
+- Extensible executor system for API calls, databases, AI models, cloud services
+- Bundle into a single desktop app (macOS .dmg / Windows .exe / Linux .AppImage) with Tauri
 
-Architecture
-1. UI (React + React Flow) — graph editor and property panel. UI exports a JSON representation of the graph.
-2. Backend (Java — Javalin or Spring Boot) — receives graph JSON, converts to LangGraph model and runs it using LangGraph4j and LangChain4j.
-3. Packaging: Use Tauri/Electron for web-based UI or JavaFX WebView to embed the UI; use jlink + jpackage or GraalVM native-image to produce single-file packages.
+## Architecture
+1. **UI** (React + React Flow) — visual workflow editor with property inspector and metadata panel
+2. **Backend** (Rust — `llm-dag`) — RESTful API server that executes workflows with support for:
+   - Token-based data flow between nodes
+   - Parallel splits, exclusive/multi-choice routing, merge strategies
+   - Human-in-the-loop approval/pause nodes
+   - LLM agents with streaming support
+   - External executors (API calls, databases, email, cloud services, etc.)
+3. **Packaging** — Tauri desktop app with embedded Rust backend
 
-Key packages and libs
-- Java backend: LangChain4j, LangGraph4j
-- Web UI: React + reactflow (or cytoscape for richer graph layouts)
-- Java server: Javalin or Spring Boot; lightweight JSON APIs
-- Packaging: jpackage (JDK 17+), GraalVM native-image, Tauri or Electron
+## Key Components
+- **llm-dag**: Rust workflow engine with executors
+- **ui**: React + Vite frontend with Tauri integration
+- **Capacitor**: iOS support (wraps web UI for simulator/device)
 
-See the `backend` and `ui` directories for a minimal skeleton and sample code.
+## Quick Run (Dev Mode)
+1. Rust backend: `cd llm-dag && cargo run` (runs on `http://localhost:9091`)
+2. UI: `cd ui && npm install && npm run tauri:dev`
 
-Quick run (dev mode)
-1. backend: `cd backend && ./gradlew run`
-2. ui: `cd ui && npm install && npm run start`
+## Workflow Execution
+- UI exports workflow definitions as JSON (nodes + edges + properties)
+- Backend executes via token-based data flow through the workflow DAG
+- Supports pausing at approval/trigger nodes and resuming with user decisions
+- Returns execution results and events (success, error, waiting, etc.)
 
-Export & run
-- UI should export a JSON schema describing nodes + edges
-- Backend imports that schema and creates an executable graph
-- Backend returns status/outputs (or streams them as progress updates via websocket)
+## Packaging & Distribution
+The app is packaged using **Tauri**, which bundles:
+- React-built web UI
+- Rust backend compiled as native binary
+- Platform-specific installers (.dmg, .msi, .AppImage)
 
-Packaging & distribution options
+Build command: `cd ui && npm run tauri:build`
 
-A. Pure Java (JavaFX WebView or JavaFX UI)
-- Build a JavaFX-based desktop, include a `WebView` to render the React UI or write the UI with JavaFX controls.
-- Use `jlink` to create a minimal runtime image that contains only required JDK modules
-- Use `jpackage` to create platform installers (.dmg, .exe, .deb)
+## Security & Configuration
+- API keys stored securely using OS Keychain (not hardcoded in binary)
+- Settings panel for managing secrets and templates
+- Support for multiple deployment profiles
 
-Example `jpackage` (macOS):
-
-```bash
-# create a runnable jar first
-cd backend
-./gradlew clean build
-
-# jpackage: adjust paths and your jdk home
-jpackage \
-	--type dmg \
-	--name "LangGraphBuilder" \
-	--input build/libs \
-	--main-jar backend.jar \
-	--main-class app.Main \
-	--app-version 0.1 \
-	--icon assets/icon.icns
-```
-
-B. Web UI + Electron or Tauri (recommended if you want advanced UI)
-- Build UI in React with React Flow
-- Embed the UI in a Electron/Tauri shell
-- Backend options:
-	- Run the Java backend as a child process and communicate via HTTP / WebSocket / stdin
-	- Or compile the Java backend to a native binary with GraalVM native-image and call it directly
-
-Example electron main (simplified):
-
-```js
-const { app, BrowserWindow } = require('electron');
-const { spawn } = require('child_process');
-
-function createWindow() {
-	const win = new BrowserWindow({ width: 1200, height: 900 });
-	win.loadFile('index.html');
-}
-
-app.whenReady().then(() => {
-	// spawn backend
-	const backend = spawn('java', ['-jar', 'backend.jar']);
-	backend.stdout.on('data', (d) => console.log(d.toString()));
-
-	createWindow();
-});
-```
-
-C. GraalVM native-image
-- Compile your Java backend into a single native binary. This is a good fit if you want one executable bundled.
-- Requires native-image build steps and may need configuration for reflection used by LangChain4j/Http libs.
-
-Which approach to pick?
-- For a modern, complex UI: choose React + React Flow embedded in Electron/Tauri; compile backend to native if you want a single binary -> use `electron-builder` or `tauri` for final packaging.
-- For a pure-Java solution with fewer moving parts: use JavaFX + jpackage.
-
-Security & keys
-- Don\'t store API keys inside the binary. Provide a secure settings window that uses the OS Keychain.
-
-Next steps
-- Wire LangGraph import and run logic
-- Implement node type library and UI property editor
-- Implement graph persistence# RustDag
+## Execution Engines Supported
+- **LLM Agents** — OpenAI, Ollama (local)
+- **API Calls** — HTTP/REST with custom headers
+- **Databases** — MySQL, PostgreSQL, MongoDB
+- **Email** — SMTP-based mail sending
+- **Cloud** — AWS (S3, SQS, Kinesis, CloudWatch), Kubernetes
+- **System** — Process execution, file operations
+- **Custom** — Inline scripts and templates
