@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git add -A)"
+      "Bash(git add -A)",
+      "Bash(git commit:*)",
+      "Bash(cargo check)",
+      "Bash(cargo test)",
+      "Bash(git add llm-dag/src/)",
+      "Bash(grep -l \"#\\\\[cfg\\(test\\)\\\\]\" /Users/rajanpanneerselvam/PersonalAgent/.claude/worktrees/wonderful-pascal/llm-dag/src/*.rs)"
     ]
   }
 }
